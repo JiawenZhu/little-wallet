@@ -89,6 +89,8 @@ enum AskIntent: Equatable, Hashable, Codable {
     case dailyAverage(Period)
     case day(Period)
     case owed
+    /// Something for Penny to do in PayPal, like "Remind everyone who hasn't paid". Planned, then confirmed.
+    case act(String)
 
     /// What it's about, for learning what someone cares about.
     var topics: [String] {
@@ -103,6 +105,7 @@ enum AskIntent: Equatable, Hashable, Codable {
         case .dailyAverage: return ["average"]
         case .day: return ["day"]
         case .owed: return ["owed"]
+        case .act: return ["act"]
         }
     }
 }
@@ -133,6 +136,8 @@ struct Insight: Equatable {
     var text: String
     var rows: [InsightRow] = []
     var followUps: [AskQuestion] = []
+    /// Something Penny offers to do in PayPal, shown as a card to check and confirm.
+    var plan: PennyPlan? = nil
 }
 
 /// Exact answers about spending. The language model asks this; it never does the sums itself.
@@ -298,7 +303,12 @@ struct Analyst {
             let sum = open.reduce(0) { $0 + $1.owed }
             return Insight(headline: money(sum),
                            text: open.count == 1 ? "\(open[0].person.name) owes you \(money(open[0].owed))." : "\(open.count) friends owe you \(money(sum)) in all.",
-                           rows: open.map { InsightRow(emoji: "🙋", title: $0.person.name, detail: "\($0.splits) \($0.splits == 1 ? "split" : "splits")", value: money($0.owed)) })
+                           rows: open.map { InsightRow(emoji: "🙋", title: $0.person.name, detail: "\($0.splits) \($0.splits == 1 ? "split" : "splits")", value: money($0.owed)) },
+                           followUps: [AskQuestion(text: open.count == 1 ? "Remind \(open[0].person.name)" : "Remind everyone who hasn't paid",
+                                                   symbol: "bell.fill", intent: .act("remind everyone who hasn't paid"))])
+
+        case .act:
+            return Insight(text: "")
         }
     }
 

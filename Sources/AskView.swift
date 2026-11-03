@@ -190,6 +190,7 @@ struct AskView: View {
 
     private func ask(_ question: AskQuestion) {
         guard !busy else { return }
+        if case .act(let request) = question.intent { return act(question.text, request: request) }
         memory.asked(question.text, topics: question.intent.topics)
         let answer = Penny.speak(analyst.answer(question.intent), intent: question.intent, question: question.text)
         withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) { turns.append(Turn(question: question.text)) }
@@ -205,6 +206,7 @@ struct AskView: View {
         guard !question.isEmpty, !busy else { return }
         typed = ""
         typing = false
+        if PennyPlanner.isAction(question) { return act(question, request: question) }
         let analyst = self.analyst
         let intent = AskRouter.intent(for: question, analyst: analyst)
         if let intent { memory.asked(question, topics: intent.topics) }
@@ -215,6 +217,19 @@ struct AskView: View {
             let reply = engine == .appleIntelligence ? insight : Penny.speak(insight, intent: intent, question: question)
             let waited = Date.now.timeIntervalSince(started)
             if waited < 0.8, !reduceMotion { try? await Task.sleep(for: .milliseconds(Int((0.8 - waited) * 1000))) }
+            finish(reply)
+        }
+    }
+
+    /// Something to do in PayPal: Penny lays it out as a card, and nothing happens until it's confirmed.
+    private func act(_ shown: String, request: String) {
+        typed = ""
+        typing = false
+        memory.asked(shown, topics: ["act"])
+        let reply = PennyPlanner.reply(to: request, splits: splits, paypal: PayPalLink.shared)
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) { turns.append(Turn(question: shown)) }
+        Task {
+            try? await Task.sleep(for: .milliseconds(reduceMotion ? 0 : 900))
             finish(reply)
         }
     }
@@ -260,6 +275,7 @@ enum Penny {
         case .dailyAverage?: openers = ["Here's your average.", "Let me work that out."]
         case .day?: openers = ["Here's what you bought.", "Let me check."]
         case .owed?: openers = ["Let me check your splits.", "Here's who owes you."]
+        case .act?: openers = ["On it."]
         case nil: openers = ["Happy to help!"]
         }
         let seed = question.lowercased().unicodeScalars.reduce(0) { $0 &+ Int($1.value) }
@@ -347,6 +363,9 @@ private struct PennyReply: View {
                         .foregroundStyle(Theme.ink).minimumScaleFactor(0.6).lineLimit(1)
                 }
                 if !insight.rows.isEmpty { receipt }
+            }
+            if let plan = insight.plan {
+                PlanCard(plan: plan).padding(.leading, 40)
             }
             if !insight.followUps.isEmpty {
                 ScrollView(.horizontal) {
@@ -529,6 +548,7 @@ extension AskQuestion {
         case .dailyAverage: return "📆"
         case .day: return "🕒"
         case .owed: return "🤝"
+        case .act: return "🔔"
         }
     }
 }

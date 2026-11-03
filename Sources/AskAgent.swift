@@ -73,7 +73,10 @@ enum Suggester {
             add("How often do I go to \(regular.name)?", "repeat", .habit(regular.name), 3.2)
         }
         if let top = analyst.byMerchant(main).first { add("How much have I spent at \(top.name)?", "storefront.fill", .total(.allTime, nil, top.name), 2.4) }
-        if analyst.balances.contains(where: { $0.owed > 0 }) { add("Who still owes me money?", "person.2.fill", .owed, 4.6) }
+        if analyst.balances.contains(where: { $0.owed > 0 }) {
+            add("Who still owes me money?", "person.2.fill", .owed, 4.6)
+            add("Remind everyone who hasn't paid", "bell.fill", .act("remind everyone who hasn't paid"), 4.5)
+        }
         if !analyst.payments(in: .thisWeek).isEmpty { add("How much did I spend this week?", "calendar.badge.clock", .total(.thisWeek, nil, nil), 2.6) }
         if !analyst.payments(in: Period(kind: .yesterday)).isEmpty { add("What did I buy yesterday?", "clock.arrow.circlepath", .day(Period(kind: .yesterday)), 2.2) }
         add("What's my daily average \(mainWords)?", "divide.circle.fill", .dailyAverage(main), 2)

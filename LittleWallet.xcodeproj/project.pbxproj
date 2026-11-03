@@ -35,6 +35,7 @@
 		ABE9B6DF512338257A9DB423 /* ReceiptVault.swift in Sources */ = {isa = PBXBuildFile; fileRef = 593EB9322A3A744DDF00DDD7 /* ReceiptVault.swift */; };
 		B3F29CBC2FD9B93C7F1DF1BF /* LittleWalletApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD0EA33B1A0E56DDC3A27F18 /* LittleWalletApp.swift */; };
 		B8CB740CC36E178AB1E72EC6 /* SplitSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D0DB60BEE745F0131EF2279 /* SplitSheet.swift */; };
+		C5851C64822B2C398FC82213 /* PennyActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95D0683F1C68D03AEEA30490 /* PennyActions.swift */; };
 		CFB396DCB9680A0675CF1096 /* MessagesRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C0120D05E097C68F034061B /* MessagesRequest.swift */; };
 		D0D6159D24466EEA67489C92 /* AskTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88C2D49D0E02C094147851F4 /* AskTests.swift */; };
 		DC654B769AC0299CF3201622 /* ExpenseReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB48A0B63FD00DE303E7663A /* ExpenseReport.swift */; };
@@ -42,6 +43,7 @@
 		E42AC026FD2012E28F8B1859 /* MonthSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0406FBED33E0E4F0514881 /* MonthSheets.swift */; };
 		E7394E6565FB6CAF22A965DB /* TapNotifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23249D951487DAA8452FD484 /* TapNotifier.swift */; };
 		EC9C3C69C50AE57960666CA6 /* CategoriesSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8757DCE27636141B459D022E /* CategoriesSheet.swift */; };
+		F9935699C669E75601CDB774 /* PennyActionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3662C208D8F0254B6C72ADFF /* PennyActionTests.swift */; };
 		FA68C1A2CA1A631AA05700F8 /* PayMethods.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0187577D534618E9312D3431 /* PayMethods.swift */; };
 		FAB3E84CFA8E9FB25376C2C1 /* SplitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA508F272E9A010BBC5EC338 /* SplitService.swift */; };
 		FF1191D72D6374BDA413CC97 /* WalletTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511B5AF4480839003710DB5C /* WalletTests.swift */; };
@@ -67,6 +69,7 @@
 		28F0E07E5F4A6F679025EFDD /* LittleWalletTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = LittleWalletTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2B06E9B3B526FE77EFE20AFF /* Wallet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Wallet.swift; sourceTree = "<group>"; };
 		2D0DB60BEE745F0131EF2279 /* SplitSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplitSheet.swift; sourceTree = "<group>"; };
+		3662C208D8F0254B6C72ADFF /* PennyActionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PennyActionTests.swift; sourceTree = "<group>"; };
 		39864111FB195DE6ED833135 /* VoiceAddSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceAddSheet.swift; sourceTree = "<group>"; };
 		3B595DAC5A8B8343C3CE7E2F /* TapSetupSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapSetupSheet.swift; sourceTree = "<group>"; };
 		511B5AF4480839003710DB5C /* WalletTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletTests.swift; sourceTree = "<group>"; };
@@ -78,6 +81,7 @@
 		81577FB68C64E0AA0AAFBA16 /* Categories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Categories.swift; sourceTree = "<group>"; };
 		8757DCE27636141B459D022E /* CategoriesSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoriesSheet.swift; sourceTree = "<group>"; };
 		88C2D49D0E02C094147851F4 /* AskTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AskTests.swift; sourceTree = "<group>"; };
+		95D0683F1C68D03AEEA30490 /* PennyActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PennyActions.swift; sourceTree = "<group>"; };
 		A10427ED38DDA9D4CC11AC35 /* VoiceParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceParserTests.swift; sourceTree = "<group>"; };
 		A43E26128DEBE851820F9560 /* PaymentDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentDetailSheet.swift; sourceTree = "<group>"; };
 		A5B2299D2CEF64DC3CE97B62 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -123,6 +127,7 @@
 				EF730573B18B376042BCB926 /* PaymentIntents.swift */,
 				0187577D534618E9312D3431 /* PayMethods.swift */,
 				CDFD43DCC0063B278D377200 /* PayPalActivity.swift */,
+				95D0683F1C68D03AEEA30490 /* PennyActions.swift */,
 				272776E5FC9AFC7A42BF94A3 /* ReceiptReader.swift */,
 				D5F2AD74B076E606E4D8F1D1 /* ReceiptScanSheet.swift */,
 				593EB9322A3A744DDF00DDD7 /* ReceiptVault.swift */,
@@ -156,6 +161,7 @@
 				88C2D49D0E02C094147851F4 /* AskTests.swift */,
 				ABA79BEF7398A06C6440ADAA /* CategoryTests.swift */,
 				D1CAD2589CC9209C52219F46 /* PayPalTests.swift */,
+				3662C208D8F0254B6C72ADFF /* PennyActionTests.swift */,
 				10D0986F3F9221D052BB5D27 /* ReceiptTests.swift */,
 				F078937A2424E8F2B8B185D4 /* ReportTests.swift */,
 				A10427ED38DDA9D4CC11AC35 /* VoiceParserTests.swift */,
@@ -270,6 +276,7 @@
 				D0D6159D24466EEA67489C92 /* AskTests.swift in Sources */,
 				58DBBB17B446C863CF3749BD /* CategoryTests.swift in Sources */,
 				7E9E0D9D1168B5BB898342D9 /* PayPalTests.swift in Sources */,
+				F9935699C669E75601CDB774 /* PennyActionTests.swift in Sources */,
 				14F6F1812E3DD34657CB9364 /* ReceiptTests.swift in Sources */,
 				1CBEFC904485B9A26307A185 /* ReportTests.swift in Sources */,
 				0BB4BA3EF716666DDD218081 /* VoiceParserTests.swift in Sources */,
@@ -297,6 +304,7 @@
 				531E4B544DB7347B8537F9EE /* PayPalActivity.swift in Sources */,
 				3C42385F9F7523937A67B930 /* PaymentDetailSheet.swift in Sources */,
 				64F128DE982207CAD490E9E9 /* PaymentIntents.swift in Sources */,
+				C5851C64822B2C398FC82213 /* PennyActions.swift in Sources */,
 				A1413A898B20C8A88D85821F /* ReceiptReader.swift in Sources */,
 				9AA5627D7E96BE3FFBB0ED11 /* ReceiptScanSheet.swift in Sources */,
 				ABE9B6DF512338257A9DB423 /* ReceiptVault.swift in Sources */,

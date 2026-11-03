@@ -52,6 +52,17 @@ extension WalletStore {
                 store.attachReceipt(photo, to: saved.id)
             }
         }
+        // A split with one friend still to pay, so Penny has someone to remind (`-demo-splits`).
+        if ProcessInfo.processInfo.arguments.contains("-demo-splits") {
+            let me = SplitPerson(id: "me", name: "Evan", colorIndex: 0, isMe: true)
+            let sam = SplitPerson(id: "demo-sam", name: "Sam Lee", colorIndex: 1)
+            let jing = SplitPerson(id: "demo-jing", name: "Jing Allen", colorIndex: 2)
+            SplitService.shared.adopt(SentSplit(id: "demo-tj", title: "Trader Joe's run", method: "PayPal", createdAt: at(1, 18), total: "21.65",
+                                                itemIDs: [], people: [me, sam, jing], shares: [
+                                                    "demo-sam": SplitShare(name: "Sam Lee", total: "7.22", status: "opened", paidVia: nil, link: ""),
+                                                    "demo-jing": SplitShare(name: "Jing Allen", total: "7.21", status: "sent", paidVia: nil, link: ""),
+                                                ]))
+        }
         return store
     }
 }
