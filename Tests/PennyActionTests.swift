@@ -48,6 +48,19 @@ final class PennyActionTests: XCTestCase {
         XCTAssertFalse(missing.ready)
     }
 
+    func testOnlyTickedLinesAreSentAndCounted() {
+        var plan = PennyPlan(kind: .invoice, lines: [
+            .init(name: "Jing", cents: 1287, note: "A"), .init(name: "Aaron", cents: 1284, note: "B"), .init(name: "Jing", cents: 1566, note: "C"),
+        ])
+        XCTAssertEqual(plan.confirmTitle, "Send 3 invoices")
+        plan.lines[1].included = false
+        XCTAssertEqual(plan.chosen.map(\.note), ["A", "C"])
+        XCTAssertEqual(plan.total, 2853)
+        XCTAssertEqual(plan.confirmTitle, "Send 2 invoices")
+        for index in plan.lines.indices { plan.lines[index].included = false }
+        XCTAssertFalse(plan.ready, "nothing ticked, nothing to send")
+    }
+
     func testRefundNeedsAPaymentFromThatFriend() {
         let reply = PennyPlanner.reply(to: "Refund Jing $5", splits: setup(), paypal: PayPalLink(defaults: UserDefaults(suiteName: UUID().uuidString)!))
         XCTAssertNil(reply.plan)

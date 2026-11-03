@@ -19,13 +19,17 @@ struct PennyPlan: Identifiable, Equatable {
         var personID: String?
         /// The friend's payment, for a refund.
         var captureID: String?
+        /// Ticked to send. Untick any you don't want to send now.
+        var included = true
     }
 
     var id = UUID()
     var kind: Kind
     var lines: [Line]
 
-    var total: Int { lines.reduce(0) { $0 + $1.cents } }
+    /// The lines that will be sent.
+    var chosen: [Line] { lines.filter(\.included) }
+    var total: Int { chosen.reduce(0) { $0 + $1.cents } }
 
     var title: String {
         switch kind {
@@ -45,14 +49,14 @@ struct PennyPlan: Identifiable, Equatable {
 
     var confirmTitle: String {
         switch kind {
-        case .invoice: return lines.count == 1 ? "Send invoice" : "Send \(lines.count) invoices"
+        case .invoice: return chosen.count == 1 ? "Send invoice" : "Send \(chosen.count) invoices"
         case .refund: return "Refund \(money(total))"
-        case .payout: return "Send \(money(total))"
+        case .payout: return chosen.count == lines.count ? "Send \(money(total))" : "Send \(money(total)) to \(chosen.count)"
         }
     }
 
     /// A payout needs somewhere to send the money; invoices and refunds don't.
-    var ready: Bool { kind != .payout || lines.allSatisfy { PennyPlanner.isAddress($0.to) } }
+    var ready: Bool { !chosen.isEmpty && (kind != .payout || chosen.allSatisfy { PennyPlanner.isAddress($0.to) }) }
 }
 
 /// Reads requests like "remind everyone who hasn't paid", "invoice Sam $45 for the Airbnb", "refund Jing $5"
@@ -319,21 +323,24 @@ struct PlanCard: View {
     @State private var outcomes: [UUID: PlanOutcome] = [:]
     @State private var showingQR: UUID?
     @State private var sent = 0
+    @State private var ticks = 0
 
     private var failed: Bool { outcomes.values.contains { !$0.ok } }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             header
+            if phase == .checking, plan.lines.count > 1 { chooser }
             ForEach($plan.lines) { $line in
                 row($line)
                 if line.id != plan.lines.last?.id { Divider() }
             }
             if plan.lines.count > 1 {
                 HStack {
-                    Text("Total").font(.subheadline.weight(.bold))
+                    Text(plan.chosen.count == plan.lines.count ? "Total" : "Total · \(plan.chosen.count) of \(plan.lines.count)")
+                        .font(.subheadline.weight(.bold)).contentTransition(.numericText())
                     Spacer()
-                    Text(money(plan.total)).font(.subheadline.weight(.heavy)).monospacedDigit()
+                    Text(money(plan.total)).font(.subheadline.weight(.heavy)).monospacedDigit().contentTransition(.numericText())
                 }
                 .foregroundStyle(Theme.ink)
             }
@@ -346,6 +353,7 @@ struct PlanCard: View {
         .shadow(color: .black.opacity(0.06), radius: 10, y: 4)
         .opacity(phase == .cancelled ? 0.55 : 1)
         .sensoryFeedback(.success, trigger: sent)
+        .sensoryFeedback(.selection, trigger: ticks)
         .animation(reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.8), value: phase)
     }
 
@@ -368,6 +376,56 @@ struct PlanCard: View {
         }
     }
 
+    /// Everyone on the card, to tick or untick all of one person's lines at once, and All / None.
+    private var chooser: some View {
+        let people = plan.lines.reduce(into: [(name: String, colorIndex: Int)]()) { list, line in
+            if !list.contains(where: { $0.name == line.name }) { list.append((line.name, line.colorIndex)) }
+        }
+        let all = plan.lines.allSatisfy(\.included)
+        return ScrollView(.horizontal) {
+            HStack(spacing: 8) {
+                Button { setAll(!all) } label: {
+                    Label(all ? "None" : "All", systemImage: all ? "circle" : "checkmark.circle.fill")
+                        .font(.caption.weight(.bold)).foregroundStyle(Theme.ink)
+                        .padding(.horizontal, 11).frame(height: 32)
+                        .background(Theme.background, in: Capsule())
+                }
+                ForEach(people, id: \.name) { person in
+                    let mine = plan.lines.filter { $0.name == person.name }
+                    let on = mine.allSatisfy(\.included)
+                    let some = mine.contains(where: \.included)
+                    Button { setPerson(person.name, !on) } label: {
+                        HStack(spacing: 6) {
+                            Text(String(person.name.prefix(1)).uppercased())
+                                .font(.system(size: 11, weight: .bold, design: .rounded)).foregroundStyle(.white)
+                                .frame(width: 22, height: 22)
+                                .background(SplitPerson.fill(SplitPerson.colors(for: person.colorIndex)), in: Circle())
+                            Text(person.name.split(separator: " ").first.map(String.init) ?? person.name).font(.caption.weight(.bold))
+                            Text("\(mine.filter(\.included).count)/\(mine.count)").font(.caption2.weight(.semibold)).monospacedDigit()
+                                .foregroundStyle(Theme.secondary)
+                        }
+                        .foregroundStyle(Theme.ink)
+                        .padding(.leading, 5).padding(.trailing, 11).frame(height: 32)
+                        .background(on ? Theme.softGreen : Theme.background, in: Capsule())
+                        .overlay(Capsule().strokeBorder(on ? Theme.accent : some ? Theme.accent.opacity(0.4) : .clear, lineWidth: 1.5))
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+        }
+        .scrollIndicators(.hidden)
+    }
+
+    private func setAll(_ on: Bool) {
+        ticks += 1
+        withAnimation(.snappy) { for index in plan.lines.indices { plan.lines[index].included = on } }
+    }
+
+    private func setPerson(_ name: String, _ on: Bool) {
+        ticks += 1
+        withAnimation(.snappy) { for index in plan.lines.indices where plan.lines[index].name == name { plan.lines[index].included = on } }
+    }
+
     private var subtitle: String {
         switch phase {
         case .checking: return "Nothing is sent until you tap \(plan.confirmTitle.lowercased().hasPrefix("send") ? "send" : "refund")"
@@ -379,20 +437,58 @@ struct PlanCard: View {
 
     private func row(_ line: Binding<PennyPlan.Line>) -> some View {
         let outcome = outcomes[line.wrappedValue.id]
+        let on = line.wrappedValue.included
+        let color = SplitPerson.colors(for: line.wrappedValue.colorIndex).first ?? Theme.accent
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
-                Text(String(line.wrappedValue.name.prefix(1)).uppercased())
-                    .font(.system(size: 15, weight: .bold, design: .rounded)).foregroundStyle(.white)
-                    .frame(width: 34, height: 34)
-                    .background(SplitPerson.fill(SplitPerson.colors(for: line.wrappedValue.colorIndex)), in: Circle())
+                if phase == .checking, plan.lines.count > 1 {
+                    Button {
+                        ticks += 1
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) { line.wrappedValue.included.toggle() }
+                    } label: {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 8, style: .continuous).fill(on ? color : .clear)
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .strokeBorder(on ? color : Theme.secondary.opacity(0.45), lineWidth: 2)
+                            if on {
+                                Image(systemName: "checkmark").font(.system(size: 13, weight: .heavy)).foregroundStyle(.white)
+                                    .transition(.scale(scale: 0.3).combined(with: .opacity))
+                            }
+                        }
+                        .frame(width: 28, height: 28)
+                        .scaleEffect(on ? 1.06 : 1)
+                        .padding(.horizontal, 3)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("\(on ? "Don't send" : "Send") \(line.wrappedValue.name), \(money(line.wrappedValue.cents))")
+                }
+                // While choosing, the tick box in their colour stands in for the avatar.
+                if !(phase == .checking && plan.lines.count > 1) {
+                    Text(String(line.wrappedValue.name.prefix(1)).uppercased())
+                        .font(.system(size: 15, weight: .bold, design: .rounded)).foregroundStyle(.white)
+                        .frame(width: 34, height: 34)
+                        .background(SplitPerson.fill(SplitPerson.colors(for: line.wrappedValue.colorIndex)), in: Circle())
+                }
                 VStack(alignment: .leading, spacing: 1) {
                     Text(line.wrappedValue.name).font(.subheadline.weight(.bold)).foregroundStyle(Theme.ink)
                     Text(line.wrappedValue.note).font(.caption).foregroundStyle(Theme.secondary).lineLimit(2)
                 }
                 Spacer(minLength: 6)
-                Text(money(line.wrappedValue.cents)).font(.body.weight(.heavy)).monospacedDigit().foregroundStyle(Theme.ink)
+                Text(money(line.wrappedValue.cents)).font(.body.weight(.heavy)).monospacedDigit()
+                    .foregroundStyle(Theme.ink).strikethrough(!on, color: Theme.secondary)
             }
-            if phase == .checking, plan.kind != .refund {
+            .opacity(on ? 1 : 0.45)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                guard phase == .checking, plan.lines.count > 1 else { return }
+                ticks += 1
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) { line.wrappedValue.included.toggle() }
+            }
+            if phase != .checking, !on {
+                Label("Not sent", systemImage: "minus.circle").font(.caption.weight(.semibold)).foregroundStyle(Theme.secondary)
+                    .padding(.leading, 44)
+            }
+            if phase == .checking, on, plan.kind != .refund {
                 HStack(spacing: 8) {
                     Image(systemName: plan.kind == .payout ? "paperplane" : "envelope").font(.caption).foregroundStyle(Theme.secondary)
                     TextField(plan.kind == .payout ? "Email or phone (needed)" : "Email (optional — or share a link)", text: line.to)
@@ -400,7 +496,8 @@ struct PlanCard: View {
                 }
                 .padding(.horizontal, 10).frame(height: 34)
                 .background(Theme.background, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .padding(.leading, 44)
+                .padding(.leading, plan.lines.count > 1 ? 36 : 44)
+                .transition(.opacity)
             }
             if let outcome {
                 HStack(spacing: 6) {
@@ -479,9 +576,9 @@ struct PlanCard: View {
 
     private func confirm() {
         phase = .sending
-        // Only what didn't go through is sent again.
+        // Only ticked lines, and on a retry only what didn't go through.
         var pending = plan
-        pending.lines = plan.lines.filter { outcomes[$0.id]?.ok != true }
+        pending.lines = plan.lines.filter { $0.included && outcomes[$0.id]?.ok != true }
         Task {
             let results = await PennyActions.perform(pending)
             withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
