@@ -16,6 +16,7 @@
 		1DE5152F59D70C2822FD4403 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF927EF4B727EFDDD184A75A /* HomeView.swift */; };
 		32E7F9CBDCA13E1386FD4B5C /* Categories.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81577FB68C64E0AA0AAFBA16 /* Categories.swift */; };
 		33DD901EFBF7491069F47AA5 /* Wallet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B06E9B3B526FE77EFE20AFF /* Wallet.swift */; };
+		3599D96998F25AE3C2F57D94 /* PayPalActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB0F1C1832E4DF3A4E2F063B /* PayPalActions.swift */; };
 		3C42385F9F7523937A67B930 /* PaymentDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A43E26128DEBE851820F9560 /* PaymentDetailSheet.swift */; };
 		5275FC3DB371D81EA231D5FA /* AskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05348444BF67E79A56C50A42 /* AskView.swift */; };
 		531E4B544DB7347B8537F9EE /* PayPalActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDFD43DCC0063B278D377200 /* PayPalActivity.swift */; };
@@ -101,6 +102,7 @@
 		D5F2AD74B076E606E4D8F1D1 /* ReceiptScanSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReceiptScanSheet.swift; sourceTree = "<group>"; };
 		D70D91444752966A17FC24C1 /* SettleUpPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettleUpPane.swift; sourceTree = "<group>"; };
 		DA508F272E9A010BBC5EC338 /* SplitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplitService.swift; sourceTree = "<group>"; };
+		DB0F1C1832E4DF3A4E2F063B /* PayPalActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayPalActions.swift; sourceTree = "<group>"; };
 		EA3D9C1E545FF97DE36E26A8 /* AddPaymentSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddPaymentSheet.swift; sourceTree = "<group>"; };
 		EF730573B18B376042BCB926 /* PaymentIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentIntents.swift; sourceTree = "<group>"; };
 		F078937A2424E8F2B8B185D4 /* ReportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportTests.swift; sourceTree = "<group>"; };
@@ -130,6 +132,7 @@
 				A43E26128DEBE851820F9560 /* PaymentDetailSheet.swift */,
 				EF730573B18B376042BCB926 /* PaymentIntents.swift */,
 				0187577D534618E9312D3431 /* PayMethods.swift */,
+				DB0F1C1832E4DF3A4E2F063B /* PayPalActions.swift */,
 				CDFD43DCC0063B278D377200 /* PayPalActivity.swift */,
 				95D0683F1C68D03AEEA30490 /* PennyActions.swift */,
 				272776E5FC9AFC7A42BF94A3 /* ReceiptReader.swift */,
@@ -315,6 +318,7 @@
 				CFB396DCB9680A0675CF1096 /* MessagesRequest.swift in Sources */,
 				E42AC026FD2012E28F8B1859 /* MonthSheets.swift in Sources */,
 				FA68C1A2CA1A631AA05700F8 /* PayMethods.swift in Sources */,
+				3599D96998F25AE3C2F57D94 /* PayPalActions.swift in Sources */,
 				531E4B544DB7347B8537F9EE /* PayPalActivity.swift in Sources */,
 				3C42385F9F7523937A67B930 /* PaymentDetailSheet.swift in Sources */,
 				64F128DE982207CAD490E9E9 /* PaymentIntents.swift in Sources */,

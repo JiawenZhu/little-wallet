@@ -265,6 +265,7 @@ struct PayPalSheet: View {
     @State private var news: String?
     @State private var landed = 0
     @State private var confirmingDisconnect = false
+    @State private var refunding: PayPalActivity?
 
     private var shown: [PayPalActivity] {
         link.activity.filter { item in
@@ -312,6 +313,7 @@ struct PayPalSheet: View {
         }
         .tint(Theme.accent)
         .sensoryFeedback(.success, trigger: landed)
+        .sheet(item: $refunding) { item in ActionComposer(store: store, kind: .refund, payment: item) }
         .task { if link.connected && (link.lastSync.map { Date.now.timeIntervalSince($0) > 60 } ?? true) { sync() } }
     }
 
@@ -365,6 +367,7 @@ struct PayPalSheet: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 header
+                QuickActions(store: store, refunding: $refunding)
                 if let news {
                     Label(news, systemImage: "sparkles").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.accent)
                         .padding(.horizontal, 14).padding(.vertical, 10)
@@ -517,6 +520,12 @@ struct PayPalSheet: View {
         }
         .padding(.vertical, 10)
         .accessibilityElement(children: .combine)
+        .contentShape(Rectangle())
+        .contextMenu {
+            if item.kind == .received {
+                Button("Refund…", systemImage: "arrow.uturn.backward") { refunding = item }
+            }
+        }
     }
 
     private func dayTitle(_ day: Date) -> String {

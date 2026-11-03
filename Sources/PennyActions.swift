@@ -181,7 +181,7 @@ enum PennyPlanner {
     // MARK: - Who and what
 
     @MainActor
-    private static func knownPeople(_ splits: SplitService) -> [SplitPerson] {
+    static func knownPeople(_ splits: SplitService) -> [SplitPerson] {
         var seen = Set<String>()
         return (splits.friends + splits.splits.flatMap(\.people)).filter { !$0.isMe && seen.insert($0.id).inserted }
     }
@@ -192,7 +192,7 @@ enum PennyPlanner {
     }
 
     @MainActor
-    private static func line(_ person: SplitPerson, cents: Int, note: String) -> PennyPlan.Line {
+    static func line(_ person: SplitPerson, cents: Int, note: String) -> PennyPlan.Line {
         let contact = person.venmo ?? ""
         let phone = contact.filter(\.isNumber).count >= 10 && !contact.contains("@")
         return PennyPlan.Line(name: person.name, colorIndex: person.colorIndex, cents: cents, note: note,
@@ -201,7 +201,7 @@ enum PennyPlanner {
 
     /// Every share still owed, one line per person per split, newest split first.
     @MainActor
-    private static func unpaid(_ splits: SplitService, only people: Set<String>?, about text: String) -> [PennyPlan.Line] {
+    static func unpaid(_ splits: SplitService, only people: Set<String>?, about text: String) -> [PennyPlan.Line] {
         var all = splits.splits.sorted { $0.createdAt > $1.createdAt }
         // "remind them about Trader Joe's" picks that split when its title is mentioned.
         let named = all.filter { split in
