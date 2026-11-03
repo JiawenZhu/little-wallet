@@ -18,6 +18,8 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>SplitAppKey</key>
+	<string>$(SPLIT_APP_KEY)</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Take a photo of a receipt and Little Wallet reads every line. The photo stays on your phone.</string>
 	<key>NSContactsUsageDescription</key>

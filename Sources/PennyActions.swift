@@ -255,6 +255,8 @@ enum PennyActions {
                     let made: Made = try await post("/api/paypal/invoices", [
                         "name": line.name, "email": line.to.contains("@") ? line.to : "", "title": line.note, "note": "Sent with Little Wallet",
                         "items": [["name": line.note, "amount": Double(line.cents) / 100]],
+                        // When it's paid, PayPal's webhook says whose share it was.
+                        "reference": line.splitID.flatMap { split in line.personID.map { "\(split)|\($0)" } } ?? "",
                     ])
                     if let split = line.splitID, let person = line.personID { splits.markRequested(split: split, person: person) }
                     results[line.id] = PlanOutcome(ok: true, detail: "Invoice \(made.number.map { "#\($0)" } ?? "") \(made.emailed ? "emailed" : "ready to share")",
@@ -299,6 +301,7 @@ enum PennyActions {
         request.httpMethod = "POST"
         request.timeoutInterval = 30
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        SplitService.authorize(&request)
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         let data: Data, response: URLResponse
         do { (data, response) = try await URLSession.shared.data(for: request) } catch {

@@ -4,11 +4,16 @@ import SwiftUI
 struct LittleWalletApp: App {
     @StateObject private var store = WalletStore.shared
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    @Environment(\.scenePhase) private var phase
 
     var body: some Scene {
         WindowGroup {
             HomeView(store: store)
                 .onOpenURL { url in _ = store.handleIncomingURL(url) }
+                // Hear about payments live only while the app is open.
+                .onChange(of: phase, initial: true) { _, now in
+                    if now == .active { LiveUpdates.shared.start() } else if now == .background { LiveUpdates.shared.stop() }
+                }
                 .preferredColorScheme(.light)
                 .tint(Theme.accent)
         }

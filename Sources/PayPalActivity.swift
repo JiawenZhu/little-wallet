@@ -122,6 +122,7 @@ final class PayPalLink: ObservableObject {
         do {
             var request = URLRequest(url: splits.serverURL.appending(path: "/api/paypal/activity").appending(queryItems: [.init(name: "days", value: "90")]))
             request.timeoutInterval = 30
+            SplitService.authorize(&request)
             let (data, response) = try await URLSession.shared.data(for: request)
             let status = (response as? HTTPURLResponse)?.statusCode ?? 0
             guard (200..<300).contains(status) else {

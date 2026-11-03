@@ -68,3 +68,18 @@ final class PennyActionTests: XCTestCase {
         XCTAssertFalse(PennyPlanner.isAction("How much did I spend this month?"))
     }
 }
+
+@MainActor
+final class LiveUpdateTests: XCTestCase {
+    func testAPaymentFromTheServerSettlesTheShareOnce() {
+        let splits = SplitService(defaults: UserDefaults(suiteName: "live-\(UUID().uuidString)")!)
+        splits.adopt(SentSplit(id: "tj", title: "Trader Joe's run", method: "PayPal", createdAt: .now, total: "14.43", itemIDs: [],
+                               people: [], shares: ["sam": SplitShare(name: "Sam Lee", total: "7.22", status: "requested", paidVia: nil, link: "")]))
+        let paid = LiveUpdates.Paid(split: "tj", person: "sam", amount: "7.22", via: "PayPal invoice")
+        XCTAssertTrue(LiveUpdates.settle(paid, splits: splits, notify: false))
+        XCTAssertEqual(splits.splits.first?.shares["sam"]?.status, "paid")
+        XCTAssertEqual(splits.splits.first?.shares["sam"]?.paidVia, "PayPal invoice")
+        XCTAssertFalse(LiveUpdates.settle(paid, splits: splits, notify: false), "already paid")
+        XCTAssertFalse(LiveUpdates.settle(.init(split: "nope", person: "sam"), splits: splits, notify: false))
+    }
+}

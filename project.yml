@@ -23,6 +23,9 @@ targets:
     type: application
     platform: iOS
     sources: [Sources]
+    configFiles:
+      Debug: Config/Base.xcconfig
+      Release: Config/Base.xcconfig
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.jiawenzhu.littlewallet

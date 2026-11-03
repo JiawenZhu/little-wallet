@@ -42,6 +42,7 @@
 		DFF0C7D09665932093708F0F /* AskAgent.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADBD3FCC85871BCAE2788876 /* AskAgent.swift */; };
 		E42AC026FD2012E28F8B1859 /* MonthSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0406FBED33E0E4F0514881 /* MonthSheets.swift */; };
 		E7394E6565FB6CAF22A965DB /* TapNotifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23249D951487DAA8452FD484 /* TapNotifier.swift */; };
+		E863874DF8733BB703ED1876 /* LiveUpdates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F1AD451B979A151830B7E2B /* LiveUpdates.swift */; };
 		EC9C3C69C50AE57960666CA6 /* CategoriesSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8757DCE27636141B459D022E /* CategoriesSheet.swift */; };
 		F9935699C669E75601CDB774 /* PennyActionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3662C208D8F0254B6C72ADFF /* PennyActionTests.swift */; };
 		FA68C1A2CA1A631AA05700F8 /* PayMethods.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0187577D534618E9312D3431 /* PayMethods.swift */; };
@@ -81,7 +82,9 @@
 		81577FB68C64E0AA0AAFBA16 /* Categories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Categories.swift; sourceTree = "<group>"; };
 		8757DCE27636141B459D022E /* CategoriesSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoriesSheet.swift; sourceTree = "<group>"; };
 		88C2D49D0E02C094147851F4 /* AskTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AskTests.swift; sourceTree = "<group>"; };
+		8F1AD451B979A151830B7E2B /* LiveUpdates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveUpdates.swift; sourceTree = "<group>"; };
 		95D0683F1C68D03AEEA30490 /* PennyActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PennyActions.swift; sourceTree = "<group>"; };
+		9C43D2C7BBBA074063010211 /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Base.xcconfig; sourceTree = "<group>"; };
 		A10427ED38DDA9D4CC11AC35 /* VoiceParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceParserTests.swift; sourceTree = "<group>"; };
 		A43E26128DEBE851820F9560 /* PaymentDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentDetailSheet.swift; sourceTree = "<group>"; };
 		A5B2299D2CEF64DC3CE97B62 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -121,6 +124,7 @@
 				1E039B08880F615BB99F8299 /* Info.plist */,
 				765DFBB34DF6CBE31424562E /* Insights.swift */,
 				CD0EA33B1A0E56DDC3A27F18 /* LittleWalletApp.swift */,
+				8F1AD451B979A151830B7E2B /* LiveUpdates.swift */,
 				6C0120D05E097C68F034061B /* MessagesRequest.swift */,
 				BB0406FBED33E0E4F0514881 /* MonthSheets.swift */,
 				A43E26128DEBE851820F9560 /* PaymentDetailSheet.swift */,
@@ -149,6 +153,7 @@
 		425186D85B45626108FFF5C7 = {
 			isa = PBXGroup;
 			children = (
+				C7556911FC3C49C163112ABE /* Config */,
 				03A8A67090F80C44DC03BD00 /* Sources */,
 				5AB50983E15CC269BADCF1B6 /* Tests */,
 				9B517BD57251B788255C78DA /* Products */,
@@ -177,6 +182,14 @@
 				28F0E07E5F4A6F679025EFDD /* LittleWalletTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		C7556911FC3C49C163112ABE /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				9C43D2C7BBBA074063010211 /* Base.xcconfig */,
+			);
+			path = Config;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -298,6 +311,7 @@
 				1DE5152F59D70C2822FD4403 /* HomeView.swift in Sources */,
 				82B6D43862855B6C64B4DDC4 /* Insights.swift in Sources */,
 				B3F29CBC2FD9B93C7F1DF1BF /* LittleWalletApp.swift in Sources */,
+				E863874DF8733BB703ED1876 /* LiveUpdates.swift in Sources */,
 				CFB396DCB9680A0675CF1096 /* MessagesRequest.swift in Sources */,
 				E42AC026FD2012E28F8B1859 /* MonthSheets.swift in Sources */,
 				FA68C1A2CA1A631AA05700F8 /* PayMethods.swift in Sources */,
@@ -335,6 +349,7 @@
 /* Begin XCBuildConfiguration section */
 		4CB724CE70A6B0D99F828BCB /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9C43D2C7BBBA074063010211 /* Base.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
@@ -510,6 +525,7 @@
 		};
 		CADCE2677AB31BB2733F9428 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9C43D2C7BBBA074063010211 /* Base.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";

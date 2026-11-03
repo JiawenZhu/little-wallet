@@ -1,0 +1,2 @@
+// Shared settings. Secrets.xcconfig (not in git) holds the key the split server expects from this app.
+#include? "Secrets.xcconfig"

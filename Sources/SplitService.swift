@@ -121,6 +121,13 @@ final class SplitService: ObservableObject {
         #endif
     }
 
+    /// Signs a request to the split server with this app's key, so only Little Wallet can use the PayPal account.
+    nonisolated static func authorize(_ request: inout URLRequest) {
+        if let key = Bundle.main.object(forInfoDictionaryKey: "SplitAppKey") as? String, !key.isEmpty, !key.hasPrefix("$(") {
+            request.setValue(key, forHTTPHeaderField: "x-app-key")
+        }
+    }
+
     /// Splits that include any of these items, newest first.
     func splits(for itemIDs: [UUID]) -> [SentSplit] {
         let wanted = Set(itemIDs)
@@ -306,6 +313,7 @@ final class SplitService: ObservableObject {
         var request = URLRequest(url: serverURL.appending(path: path))
         request.httpMethod = method
         request.timeoutInterval = 25
+        Self.authorize(&request)
         if let body {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
