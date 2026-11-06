@@ -95,7 +95,7 @@ enum PennyPlanner {
             return Insight(headline: money(sum),
                            text: lines.count == 1
                                ? "I can send \(lines[0].name) a PayPal invoice for \(money(lines[0].cents)). Check it, then tap send."
-                               : "I can send a PayPal invoice to each of the \(lines.count) people who still owe you. Check them, then tap send.",
+                               : inviteLine(shares: lines.count, people: Set(lines.map(\.name)).count),
                            plan: PennyPlan(kind: .invoice, lines: lines))
 
         case .invoice?:
@@ -142,6 +142,13 @@ enum PennyPlanner {
     }
 
     private static func ask(_ text: String) -> Insight { Insight(text: text) }
+
+    /// One friend can owe for several splits, so friends and invoices are counted apart.
+    static func inviteLine(shares: Int, people: Int) -> String {
+        shares == people
+            ? "I can send a PayPal invoice to each of the \(people) friends who still owe you. Check them, then tap send."
+            : "\(people == 1 ? "1 friend still owes" : "\(people) friends still owe") you for \(shares) splits. I can send an invoice for each. Check them, then tap send."
+    }
 
     // MARK: - Reading the request
 

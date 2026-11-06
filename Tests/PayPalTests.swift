@@ -18,6 +18,16 @@ final class PayPalTests: XCTestCase {
       "note":null,"items":[],"split":null,"pending":false}]}
     """
 
+    func testRefundsKnowWhichWayTheMoneyWent() throws {
+        let row = #"{"id":"R","date":"2026-11-03T12:00:00Z","kind":"refund","amount":"0.50","direction":"%@","via":"Venmo","name":"Sam Lee","items":[]}"#
+        let out = try JSONDecoder().decode(PayPalActivity.self, from: Data(String(format: row, "out").utf8))
+        XCTAssertFalse(out.isIn)
+        XCTAssertEqual(out.title, "Refund to Sam Lee")
+        let back = try JSONDecoder().decode(PayPalActivity.self, from: Data(String(format: row, "in").utf8))
+        XCTAssertTrue(back.isIn)
+        XCTAssertEqual(back.title, "Refund to you")
+    }
+
     func testSpendingIsImportedOnceAndFriendsPaymentsSettleTheirShare() throws {
         struct Response: Decodable { var activity: [PayPalActivity] }
         let activity = try JSONDecoder().decode(Response.self, from: Data(json.utf8)).activity

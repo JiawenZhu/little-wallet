@@ -19,6 +19,8 @@ struct PayPalActivity: Identifiable, Codable, Equatable {
     var date: String
     var kind: Kind
     var amount: String
+    /// "in" or "out". Older saved activity has none; only money received counts as in then.
+    var direction: String? = nil
     var fee: String?
     var currency: String?
     /// "Venmo", "PayPal" or "Card".
@@ -32,12 +34,12 @@ struct PayPalActivity: Identifiable, Codable, Equatable {
     var when: Date { (try? Date(date, strategy: .iso8601)) ?? .now }
     var cents: Int { Int(((Double(amount) ?? 0) * 100).rounded()) }
     var feeCents: Int { Int(((Double(fee ?? "0") ?? 0) * 100).rounded()) }
-    var isIn: Bool { kind == .received || kind == .refund && cents > 0 }
+    var isIn: Bool { direction.map { $0 == "in" } ?? (kind == .received) }
 
     var title: String {
         switch kind {
         case .transfer: return "To your bank"
-        case .refund: return "Refund\(name.map { " · \($0)" } ?? "")"
+        case .refund: return isIn ? "Refund to you" : "Refund\(name.map { " to \($0)" } ?? "")"
         default: return name ?? note ?? "PayPal payment"
         }
     }
@@ -479,8 +481,8 @@ struct PayPalSheet: View {
         return HStack(alignment: .top, spacing: 12) {
             ZStack(alignment: .bottomTrailing) {
                 Group {
-                    if item.kind == .transfer {
-                        Image(systemName: "building.columns.fill").font(.system(size: 17, weight: .semibold)).foregroundStyle(Theme.secondary)
+                    if item.kind == .transfer || item.kind == .refund {
+                        Image(systemName: item.kind == .transfer ? "building.columns.fill" : "arrow.uturn.backward").font(.system(size: 17, weight: .semibold)).foregroundStyle(Theme.secondary)
                             .frame(width: 44, height: 44).background(Theme.background, in: Circle())
                     } else {
                         Text(String((item.name ?? "?").trimmingCharacters(in: .punctuationCharacters).prefix(1)).uppercased())
@@ -504,7 +506,7 @@ struct PayPalSheet: View {
                         .font(.caption.weight(.semibold)).foregroundStyle(Theme.accent)
                         .padding(.horizontal, 8).padding(.vertical, 3)
                         .background(Theme.softGreen, in: Capsule())
-                } else if item.split != nil {
+                } else if item.split != nil, item.kind == .received {
                     Label("Paid a split share", systemImage: "person.2.fill").font(.caption.weight(.semibold)).foregroundStyle(Theme.secondary)
                 }
             }

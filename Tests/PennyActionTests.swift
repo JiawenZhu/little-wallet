@@ -61,6 +61,12 @@ final class PennyActionTests: XCTestCase {
         XCTAssertFalse(plan.ready, "nothing ticked, nothing to send")
     }
 
+    func testFriendsAndInvoicesAreCountedApart() {
+        XCTAssertTrue(PennyPlanner.inviteLine(shares: 9, people: 2).hasPrefix("2 friends still owe you for 9 splits"))
+        XCTAssertTrue(PennyPlanner.inviteLine(shares: 3, people: 1).hasPrefix("1 friend still owes you for 3 splits"))
+        XCTAssertTrue(PennyPlanner.inviteLine(shares: 2, people: 2).contains("each of the 2 friends"))
+    }
+
     func testRefundNeedsAPaymentFromThatFriend() {
         let reply = PennyPlanner.reply(to: "Refund Jing $5", splits: setup(), paypal: PayPalLink(defaults: UserDefaults(suiteName: UUID().uuidString)!))
         XCTAssertNil(reply.plan)
