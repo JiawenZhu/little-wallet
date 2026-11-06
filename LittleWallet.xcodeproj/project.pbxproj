@@ -8,12 +8,14 @@
 
 /* Begin PBXBuildFile section */
 		02D2743344EAEFA6029011A3 /* TapSetupSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B595DAC5A8B8343C3CE7E2F /* TapSetupSheet.swift */; };
+		0A367EF08E2658876E029655 /* PennyMemoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64B299A72B32D784FB4A5755 /* PennyMemoryTests.swift */; };
 		0B33F79C2CA72449031FF7A9 /* SettleUpPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = D70D91444752966A17FC24C1 /* SettleUpPane.swift */; };
 		0BB4BA3EF716666DDD218081 /* VoiceParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10427ED38DDA9D4CC11AC35 /* VoiceParserTests.swift */; };
 		14F6F1812E3DD34657CB9364 /* ReceiptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10D0986F3F9221D052BB5D27 /* ReceiptTests.swift */; };
 		1A3F63F74E3B16C8F919D078 /* AddPaymentSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA3D9C1E545FF97DE36E26A8 /* AddPaymentSheet.swift */; };
 		1CBEFC904485B9A26307A185 /* ReportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F078937A2424E8F2B8B185D4 /* ReportTests.swift */; };
 		1DE5152F59D70C2822FD4403 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF927EF4B727EFDDD184A75A /* HomeView.swift */; };
+		25F7A8DF7575E78D21E17426 /* PennyMemory.swift in Sources */ = {isa = PBXBuildFile; fileRef = A561CD9CDD80B731084759EE /* PennyMemory.swift */; };
 		32E7F9CBDCA13E1386FD4B5C /* Categories.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81577FB68C64E0AA0AAFBA16 /* Categories.swift */; };
 		33DD901EFBF7491069F47AA5 /* Wallet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B06E9B3B526FE77EFE20AFF /* Wallet.swift */; };
 		3599D96998F25AE3C2F57D94 /* PayPalActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB0F1C1832E4DF3A4E2F063B /* PayPalActions.swift */; };
@@ -78,6 +80,7 @@
 		593EB9322A3A744DDF00DDD7 /* ReceiptVault.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReceiptVault.swift; sourceTree = "<group>"; };
 		5AD324AE38ABBA6678D7986E /* VoiceAgent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceAgent.swift; sourceTree = "<group>"; };
 		5DA18D0850C01F8239CF8103 /* ReportSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportSheet.swift; sourceTree = "<group>"; };
+		64B299A72B32D784FB4A5755 /* PennyMemoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PennyMemoryTests.swift; sourceTree = "<group>"; };
 		6C0120D05E097C68F034061B /* MessagesRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagesRequest.swift; sourceTree = "<group>"; };
 		765DFBB34DF6CBE31424562E /* Insights.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Insights.swift; sourceTree = "<group>"; };
 		81577FB68C64E0AA0AAFBA16 /* Categories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Categories.swift; sourceTree = "<group>"; };
@@ -88,6 +91,7 @@
 		9C43D2C7BBBA074063010211 /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Base.xcconfig; sourceTree = "<group>"; };
 		A10427ED38DDA9D4CC11AC35 /* VoiceParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceParserTests.swift; sourceTree = "<group>"; };
 		A43E26128DEBE851820F9560 /* PaymentDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentDetailSheet.swift; sourceTree = "<group>"; };
+		A561CD9CDD80B731084759EE /* PennyMemory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PennyMemory.swift; sourceTree = "<group>"; };
 		A5B2299D2CEF64DC3CE97B62 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A940A9649CC1F45D0669B1B8 /* VoiceListener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceListener.swift; sourceTree = "<group>"; };
 		ABA79BEF7398A06C6440ADAA /* CategoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryTests.swift; sourceTree = "<group>"; };
@@ -135,6 +139,7 @@
 				DB0F1C1832E4DF3A4E2F063B /* PayPalActions.swift */,
 				CDFD43DCC0063B278D377200 /* PayPalActivity.swift */,
 				95D0683F1C68D03AEEA30490 /* PennyActions.swift */,
+				A561CD9CDD80B731084759EE /* PennyMemory.swift */,
 				272776E5FC9AFC7A42BF94A3 /* ReceiptReader.swift */,
 				D5F2AD74B076E606E4D8F1D1 /* ReceiptScanSheet.swift */,
 				593EB9322A3A744DDF00DDD7 /* ReceiptVault.swift */,
@@ -170,6 +175,7 @@
 				ABA79BEF7398A06C6440ADAA /* CategoryTests.swift */,
 				D1CAD2589CC9209C52219F46 /* PayPalTests.swift */,
 				3662C208D8F0254B6C72ADFF /* PennyActionTests.swift */,
+				64B299A72B32D784FB4A5755 /* PennyMemoryTests.swift */,
 				10D0986F3F9221D052BB5D27 /* ReceiptTests.swift */,
 				F078937A2424E8F2B8B185D4 /* ReportTests.swift */,
 				A10427ED38DDA9D4CC11AC35 /* VoiceParserTests.swift */,
@@ -293,6 +299,7 @@
 				58DBBB17B446C863CF3749BD /* CategoryTests.swift in Sources */,
 				7E9E0D9D1168B5BB898342D9 /* PayPalTests.swift in Sources */,
 				F9935699C669E75601CDB774 /* PennyActionTests.swift in Sources */,
+				0A367EF08E2658876E029655 /* PennyMemoryTests.swift in Sources */,
 				14F6F1812E3DD34657CB9364 /* ReceiptTests.swift in Sources */,
 				1CBEFC904485B9A26307A185 /* ReportTests.swift in Sources */,
 				0BB4BA3EF716666DDD218081 /* VoiceParserTests.swift in Sources */,
@@ -323,6 +330,7 @@
 				3C42385F9F7523937A67B930 /* PaymentDetailSheet.swift in Sources */,
 				64F128DE982207CAD490E9E9 /* PaymentIntents.swift in Sources */,
 				C5851C64822B2C398FC82213 /* PennyActions.swift in Sources */,
+				25F7A8DF7575E78D21E17426 /* PennyMemory.swift in Sources */,
 				A1413A898B20C8A88D85821F /* ReceiptReader.swift in Sources */,
 				9AA5627D7E96BE3FFBB0ED11 /* ReceiptScanSheet.swift in Sources */,
 				ABE9B6DF512338257A9DB423 /* ReceiptVault.swift in Sources */,

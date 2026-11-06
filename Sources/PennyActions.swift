@@ -64,6 +64,54 @@ struct PennyPlan: Identifiable, Equatable {
 enum PennyPlanner {
     static func isAction(_ raw: String) -> Bool { kind(of: raw.lowercased()) != nil }
 
+    /// Also "make it $30" and "same for Alex" right after a plan.
+    static func isAction(_ raw: String, context: PennyContext) -> Bool {
+        isAction(raw) || (context.action != nil && isChange(raw.lowercased()))
+    }
+
+    private static func isChange(_ text: String) -> Bool {
+        text.range(of: #"^(actually |no,? )?(make it|change it|make that|change that)\b|\bsame for\b|\b(too|as well)[.!?]?$|^(also|and) (invoice|remind|refund|pay)\b"#, options: .regularExpression) != nil
+    }
+
+    /// Fills in who "him", "her" and "them" are from the conversation.
+    private static func spoken(_ text: String) -> Bool {
+        text.range(of: #"\b(him|her|them|he|she|they|that person|those people)\b"#, options: .regularExpression) != nil
+    }
+
+    /// Answers with the conversation in mind, and remembers who and what the plan was about.
+    @MainActor
+    static func reply(to raw: String, splits: SplitService, paypal: PayPalLink, context: inout PennyContext) -> Insight {
+        let text = raw.lowercased()
+        var request = raw
+        let people = knownPeople(splits)
+        let named = people.filter { mentions($0.name, in: text) }
+        var who = named.map(\.name)
+        if who.isEmpty, spoken(text) {
+            who = context.people
+            guard !who.isEmpty else { return Insight(text: "Who do you mean? Tell me their name and I'll take it from there.") }
+            // Say their names in the request, so the plan below finds them.
+            request += " " + who.joined(separator: " and ")
+        }
+        if let last = context.action, isChange(text) {
+            let cents = amount(in: text) ?? last.cents
+            let names = who.isEmpty ? last.names : who
+            let verb = ["invoice": "invoice", "refund": "refund", "payout": "pay back"][last.kind] ?? "invoice"
+            let dollars = cents.map { String(format: " $%.2f", Double($0) / 100) } ?? ""
+            request = "\(verb) \(names.joined(separator: " and "))\(dollars)" + (last.reason.map { " for \($0)" } ?? "")
+        }
+        let answer = reply(to: request, splits: splits, paypal: paypal)
+        if let plan = answer.plan {
+            let lines = plan.lines
+            let names = lines.reduce(into: [String]()) { if !$0.contains($1.name) { $0.append($1.name) } }
+            context.people = names
+            let single = Set(lines.map(\.cents)).count == 1 ? lines.first?.cents : nil
+            let reason = lines.first?.note
+            context.action = .init(kind: plan.kind.memoryName, names: names, cents: single, reason: reason)
+            context.updated = .now
+        }
+        return answer
+    }
+
     private enum Wanted { case remind, invoice, refund, payout }
 
     private static func kind(of text: String) -> Wanted? {
@@ -102,8 +150,10 @@ enum PennyPlanner {
             guard let person = named.first else { return ask("Who should I invoice? Try “Invoice Sam $45 for the Airbnb”.") }
             if let cents {
                 let item = note.map { $0.prefix(1).uppercased() + $0.dropFirst() } ?? "Shared cost"
-                return Insight(headline: money(cents), text: "Here's the invoice for \(person.name). Check it, then tap send.",
-                               plan: PennyPlan(kind: .invoice, lines: [line(person, cents: cents, note: String(item))]))
+                // Everyone named gets their own invoice for that amount.
+                return Insight(headline: money(cents * named.count),
+                               text: named.count == 1 ? "Here's the invoice for \(person.name). Check it, then tap send." : "Here's an invoice for each of them. Check them, then tap send.",
+                               plan: PennyPlan(kind: .invoice, lines: named.map { line($0, cents: cents, note: String(item)) }))
             }
             // No amount: what they owe from splits.
             let lines = unpaid(splits, only: [person.id], about: text)
@@ -595,7 +645,11 @@ struct PlanCard: View {
                 outcomes.merge(results) { $1 }
                 phase = .done
             }
-            if results.values.contains(where: \.ok) { sent += 1 }
+            if results.values.contains(where: \.ok) {
+                sent += 1
+                let lines = pending.lines.filter { results[$0.id]?.ok == true }
+                PennyChat.shared.record(done: "\(pending.title) to \(lines.map(\.name).joined(separator: ", ")) · \(money(lines.reduce(0) { $0 + $1.cents }))")
+            }
             if plan.kind == .refund { _ = await PayPalLink.shared.sync(store: WalletStore.shared) }
         }
     }
@@ -609,5 +663,15 @@ enum QRCode {
         guard let output = filter.outputImage?.transformed(by: CGAffineTransform(scaleX: 8, y: 8)),
               let cg = CIContext().createCGImage(output, from: output.extent) else { return nil }
         return UIImage(cgImage: cg)
+    }
+}
+
+extension PennyPlan.Kind {
+    var memoryName: String {
+        switch self {
+        case .invoice: return "invoice"
+        case .refund: return "refund"
+        case .payout: return "payout"
+        }
     }
 }

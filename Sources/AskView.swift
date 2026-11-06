@@ -6,16 +6,12 @@ struct AskView: View {
     @ObservedObject var store: WalletStore
     @ObservedObject private var memory = AskMemory.shared
     @ObservedObject private var splits = SplitService.shared
+    @ObservedObject private var chat = PennyChat.shared
     @StateObject private var listener = VoiceListener()
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private struct Turn: Identifiable, Equatable {
-        let id = UUID()
-        let question: String
-        var answer: Insight?
-    }
-    @State private var turns: [Turn] = []
+    private var turns: [PennyTurn] { chat.turns }
     @State private var typed = ""
     @State private var listening = false
     @FocusState private var typing: Bool
@@ -56,6 +52,7 @@ struct AskView: View {
                 }
                 .scrollDismissesKeyboard(.interactively)
                 .onChange(of: turns) { _, _ in withAnimation(.snappy) { proxy.scrollTo("end", anchor: .bottom) } }
+                .onAppear { proxy.scrollTo("end", anchor: .bottom) }
             }
             inputBar
         }
@@ -69,9 +66,13 @@ struct AskView: View {
         .onDisappear { listener.stop() }
         .task {
             #if DEBUG
-            if let question = UserDefaults.standard.string(forKey: "ask-text"), !question.isEmpty {
-                try? await Task.sleep(for: .seconds(1.2))
-                ask(question)
+            if let questions = UserDefaults.standard.string(forKey: "ask-text"), !questions.isEmpty {
+                // Several questions in a row, split by "||", to check a whole conversation.
+                for question in questions.components(separatedBy: "||") {
+                    try? await Task.sleep(for: .seconds(1.2))
+                    while busy { try? await Task.sleep(for: .milliseconds(200)) }
+                    ask(question.trimmingCharacters(in: .whitespaces))
+                }
             }
             #endif
         }
@@ -101,7 +102,7 @@ struct AskView: View {
             }
             Spacer()
             if !turns.isEmpty {
-                Button { withAnimation(.snappy) { turns = [] } } label: {
+                Button { withAnimation(.snappy) { chat.startOver() } } label: {
                     Image(systemName: "arrow.counterclockwise").font(.system(size: 15, weight: .semibold))
                         .frame(width: 40, height: 40).background(Theme.card, in: Circle())
                 }
@@ -123,7 +124,7 @@ struct AskView: View {
                 FloatingPenny().frame(height: 170).padding(.top, 8)
             }
             PennyBubble {
-                Text(Penny.greeting(analyst)).font(.body).foregroundStyle(Theme.ink)
+                Text(chat.pickUp ?? Penny.greeting(analyst)).font(.body).foregroundStyle(Theme.ink)
                     .fixedSize(horizontal: false, vertical: true)
             }
             if turns.isEmpty {
@@ -192,13 +193,7 @@ struct AskView: View {
         guard !busy else { return }
         if case .act(let request) = question.intent { return act(question.text, request: request) }
         memory.asked(question.text, topics: question.intent.topics)
-        let answer = Penny.speak(analyst.answer(question.intent), intent: question.intent, question: question.text)
-        withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) { turns.append(Turn(question: question.text)) }
-        Task {
-            // A short beat, the way a person would look it up.
-            try? await Task.sleep(for: .milliseconds(reduceMotion ? 0 : 900))
-            finish(answer)
-        }
+        reply(to: question.text, intent: question.intent, analyst: analyst)
     }
 
     private func ask(_ raw: String) {
@@ -206,18 +201,51 @@ struct AskView: View {
         guard !question.isEmpty, !busy else { return }
         typed = ""
         typing = false
-        if PennyPlanner.isAction(question) { return act(question, request: question) }
+        // Things she's told to remember or forget, then actions, then follow-ups, each with the conversation in mind.
+        if let answer = chat.command(question) {
+            start(question)
+            return after(.milliseconds(500)) { finish(answer) }
+        }
+        if PennyPlanner.isAction(question, context: chat.context) { return act(question, request: question) }
         let analyst = self.analyst
+        if let intent = chat.context.followUp(question, analyst: analyst) {
+            memory.asked(question, topics: intent.topics)
+            return reply(to: question, intent: intent, analyst: analyst)
+        }
         let intent = AskRouter.intent(for: question, analyst: analyst)
         if let intent { memory.asked(question, topics: intent.topics) }
-        withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) { turns.append(Turn(question: question)) }
+        start(question)
+        let known = AskAgent.Memory(history: chat.recentHistory, context: chat.context.summary, facts: chat.facts,
+                                    done: chat.done.suffix(3).map(\.text), recalled: chat.recall(question))
         Task {
             let started = Date.now
-            let (insight, engine) = await AskAgent.answer(question, analyst: analyst, profile: profile)
-            let reply = engine == .appleIntelligence ? insight : Penny.speak(insight, intent: intent, question: question)
+            let (insight, engine, used) = await AskAgent.answer(question, analyst: analyst, profile: profile, memory: known)
+            let reply = engine == .appleIntelligence ? insight : Penny.speak(insight, intent: used ?? intent, question: question)
             let waited = Date.now.timeIntervalSince(started)
             if waited < 0.8, !reduceMotion { try? await Task.sleep(for: .milliseconds(Int((0.8 - waited) * 1000))) }
+            if let used { chat.context.absorb(used, answer: insight) }
             finish(reply)
+        }
+    }
+
+    /// An exact answer, and the conversation moves on to what it was about.
+    private func reply(to question: String, intent: AskIntent, analyst: Analyst) {
+        let insight = analyst.answer(intent)
+        let spoken = Penny.speak(insight, intent: intent, question: question)
+        start(question)
+        chat.context.absorb(intent, answer: insight)
+        // A short beat, the way a person would look it up.
+        after(.milliseconds(reduceMotion ? 0 : 900)) { finish(spoken) }
+    }
+
+    private func start(_ question: String) {
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) { chat.turns.append(PennyTurn(question: question)) }
+    }
+
+    private func after(_ delay: Duration, _ work: @escaping @MainActor () -> Void) {
+        Task {
+            try? await Task.sleep(for: delay)
+            work()
         }
     }
 
@@ -226,17 +254,15 @@ struct AskView: View {
         typed = ""
         typing = false
         memory.asked(shown, topics: ["act"])
-        let reply = PennyPlanner.reply(to: request, splits: splits, paypal: PayPalLink.shared)
-        withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) { turns.append(Turn(question: shown)) }
-        Task {
-            try? await Task.sleep(for: .milliseconds(reduceMotion ? 0 : 900))
-            finish(reply)
-        }
+        let reply = PennyPlanner.reply(to: request, splits: splits, paypal: PayPalLink.shared, context: &chat.context)
+        start(shown)
+        after(.milliseconds(reduceMotion ? 0 : 900)) { finish(reply) }
     }
 
     private func finish(_ insight: Insight) {
-        guard let index = turns.indices.last else { return }
-        withAnimation(.spring(response: 0.5, dampingFraction: 0.82)) { turns[index].answer = insight }
+        guard let index = chat.turns.indices.last else { return }
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.82)) { chat.turns[index].answer = insight }
+        chat.save()
     }
 }
 
@@ -274,7 +300,7 @@ enum Penny {
         case .habit?: openers = ["Let me count.", "You're a regular!"]
         case .dailyAverage?: openers = ["Here's your average.", "Let me work that out."]
         case .day?: openers = ["Here's what you bought.", "Let me check."]
-        case .owed?: openers = ["Let me check your splits.", "Here's who owes you."]
+        case .owed?, .owedBy?: openers = ["Let me check your splits.", "Here's who owes you."]
         case .act?: openers = ["On it."]
         case nil: openers = ["Happy to help!"]
         }
@@ -366,6 +392,10 @@ private struct PennyReply: View {
             }
             if let plan = insight.plan {
                 PlanCard(plan: plan).padding(.leading, 40)
+            } else if let closed = insight.closedPlan {
+                Label("\(closed) · ask again to send", systemImage: "clock.arrow.circlepath")
+                    .font(.caption.weight(.semibold)).foregroundStyle(Theme.secondary)
+                    .padding(.leading, 44)
             }
             if !insight.followUps.isEmpty {
                 ScrollView(.horizontal) {
@@ -547,7 +577,7 @@ extension AskQuestion {
         case .habit: return "🔁"
         case .dailyAverage: return "📆"
         case .day: return "🕒"
-        case .owed: return "🤝"
+        case .owed, .owedBy: return "🤝"
         case .act: return "🔔"
         }
     }

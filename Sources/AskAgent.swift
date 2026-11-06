@@ -107,7 +107,10 @@ enum AskRouter {
             ?? (has(["food", "restaurant", "coffee", "dinner", "lunch"]) ? .dining : has(["gas", "ride", "uber", "lyft"]) ? .transport : nil)
         let shop = analyst.byMerchant(.allTime).map(\.name).first { text.contains($0.lowercased()) }
 
-        if has(["owe", "pay me back", "paid me", "settle"]) { return .owed }
+        if has(["owe", "pay me back", "paid me", "settle"]) {
+            let friend = analyst.balances.map(\.person.name).first { PennyPlanner.mentions($0, in: text) }
+            return friend.map(AskIntent.owedBy) ?? .owed
+        }
         if has(["how often", "how many times", "visits"]), let shop { return .habit(shop) }
         if has(["most expensive", "biggest", "largest", "priciest", "top purchase"]) { return .biggest(period) }
         if has(["more than", "less than", "compare", " vs", "versus", "up from", "down from", "why is"]) { return .compare(period, category) }
@@ -128,15 +131,26 @@ enum AskAgent {
     enum Engine: Equatable { case exact, appleIntelligence, rules }
     static let log = Logger(subsystem: "com.jiawenzhu.littlewallet", category: "ask")
 
-    static func answer(_ question: String, analyst: Analyst, profile: [String]) async -> (Insight, Engine) {
+    /// What Penny knows going in: the last few exchanges, what's being discussed, and what she was asked to remember.
+    struct Memory {
+        var history: [String] = []
+        var context: String?
+        var facts: [String] = []
+        var done: [String] = []
+        var recalled: String?
+    }
+
+    /// The intent is what was looked up, so the conversation can carry on from it.
+    static func answer(_ question: String, analyst: Analyst, profile: [String], memory: Memory = Memory()) async -> (Insight, Engine, AskIntent?) {
         #if canImport(FoundationModels)
-        if #available(iOS 26.0, *), let reply = await LocalAnalyst.answer(question, analyst: analyst, profile: profile) {
-            return (reply, .appleIntelligence)
+        if #available(iOS 26.0, *), let reply = await LocalAnalyst.answer(question, analyst: analyst, profile: profile, memory: memory) {
+            return (reply.0, .appleIntelligence, reply.1)
         }
         #endif
-        if let intent = AskRouter.intent(for: question, analyst: analyst) { return (analyst.answer(intent), .rules) }
+        if let intent = AskRouter.intent(for: question, analyst: analyst) { return (analyst.answer(intent), .rules, intent) }
+        if let recalled = memory.recalled { return (Insight(text: "You told me: \(recalled)."), .rules, nil) }
         return (Insight(text: "I can answer questions about your payments: totals, categories, shops, your biggest purchases, and who owes you. Try one of these.",
-                        followUps: Suggester.questions(analyst, memory: [:], recent: [], limit: 4)), .rules)
+                        followUps: Suggester.questions(analyst, memory: [:], recent: [], limit: 4)), .rules, nil)
     }
 
     static var modelAvailable: Bool {
@@ -152,9 +166,9 @@ enum AskAgent {
 @available(iOS 26.0, *)
 private final class ToolLog: @unchecked Sendable {
     private let lock = NSLock()
-    private var found: [Insight] = []
-    func add(_ insight: Insight) { lock.lock(); found.append(insight); lock.unlock() }
-    var last: Insight? { lock.lock(); defer { lock.unlock() }; return found.last }
+    private var found: [(Insight, AskIntent)] = []
+    func add(_ insight: Insight, _ intent: AskIntent) { lock.lock(); found.append((insight, intent)); lock.unlock() }
+    var last: (Insight, AskIntent)? { lock.lock(); defer { lock.unlock() }; return found.last }
 }
 
 @available(iOS 26.0, *)
@@ -187,7 +201,7 @@ private enum LocalAnalyst {
         func call(arguments: Question) async throws -> String {
             let intent = Self.intent(arguments, analyst: analyst)
             let insight = analyst.answer(intent)
-            log.add(insight)
+            log.add(insight, intent)
             let rows = insight.rows.map { "\($0.title)\($0.detail.isEmpty ? "" : " (\($0.detail))"): \($0.value)" }.joined(separator: "; ")
             return insight.text + (rows.isEmpty ? "" : " Details: \(rows).")
         }
@@ -210,10 +224,16 @@ private enum LocalAnalyst {
         }
     }
 
-    static func answer(_ question: String, analyst: Analyst, profile: [String]) async -> Insight? {
+    static func answer(_ question: String, analyst: Analyst, profile: [String], memory: AskAgent.Memory) async -> (Insight, AskIntent?)? {
         guard available else { return nil }
         let log = ToolLog()
-        let known = profile.isEmpty ? "" : " What you know about them: \(profile.joined(separator: "; "))."
+        var known = profile.isEmpty ? "" : " What you know about them: \(profile.joined(separator: "; "))."
+        if !memory.facts.isEmpty { known += " They asked you to remember: \(memory.facts.joined(separator: "; "))." }
+        if !memory.done.isEmpty { known += " You already did for them: \(memory.done.joined(separator: "; "))." }
+        if let context = memory.context {
+            known += " Right now you're discussing \(context). If they leave out the time, shop or category, use these."
+        }
+        if !memory.history.isEmpty { known += "\n\nThe conversation so far:\n\(memory.history.joined(separator: "\n"))\n" }
         let session = LanguageModelSession(tools: [SpendingTool(analyst: analyst, log: log)], instructions: """
             You are Penny, the friendly helper at the front desk of Little Wallet, a spending tracker. Talk like a \
             kind, cheerful receptionist: natural, warm and brief, one or two short sentences, first person. Never \
@@ -224,9 +244,9 @@ private enum LocalAnalyst {
             """)
         do {
             let reply = try await session.respond(to: question).content
-            var insight = log.last ?? Insight(text: reply)
+            var insight = log.last?.0 ?? Insight(text: reply)
             insight.text = reply.trimmingCharacters(in: .whitespacesAndNewlines)
-            return insight
+            return (insight, log.last?.1)
         } catch {
             AskAgent.log.error("On-device model couldn't answer: \(String(describing: error), privacy: .public)")
             return nil

@@ -89,6 +89,8 @@ enum AskIntent: Equatable, Hashable, Codable {
     case dailyAverage(Period)
     case day(Period)
     case owed
+    /// What one friend owes.
+    case owedBy(String)
     /// Something for Penny to do in PayPal, like "Remind everyone who hasn't paid". Planned, then confirmed.
     case act(String)
 
@@ -104,14 +106,14 @@ enum AskIntent: Equatable, Hashable, Codable {
         case let .habit(shop): return ["habit", "shop:\(shop.lowercased())"]
         case .dailyAverage: return ["average"]
         case .day: return ["day"]
-        case .owed: return ["owed"]
+        case .owed, .owedBy: return ["owed"]
         case .act: return ["act"]
         }
     }
 }
 
 /// A question shown as a chip.
-struct AskQuestion: Identifiable, Hashable {
+struct AskQuestion: Identifiable, Hashable, Codable {
     var text: String
     var symbol: String
     var intent: AskIntent
@@ -119,7 +121,7 @@ struct AskQuestion: Identifiable, Hashable {
 }
 
 /// One line in an answer: a payment, a category, a shop or a person.
-struct InsightRow: Identifiable, Equatable {
+struct InsightRow: Identifiable, Equatable, Codable {
     var id = UUID()
     var image: String?
     var emoji: String?
@@ -131,13 +133,17 @@ struct InsightRow: Identifiable, Equatable {
 }
 
 /// An answer: a headline number, a sentence, the lines behind it, and what to ask next.
-struct Insight: Equatable {
+struct Insight: Equatable, Codable {
     var headline: String?
     var text: String
     var rows: [InsightRow] = []
     var followUps: [AskQuestion] = []
     /// Something Penny offers to do in PayPal, shown as a card to check and confirm.
     var plan: PennyPlan? = nil
+    /// In a saved chat: what the card was. It can't be confirmed later, only asked for again.
+    var closedPlan: String? = nil
+
+    private enum CodingKeys: String, CodingKey { case headline, text, rows, followUps, closedPlan }
 }
 
 /// Exact answers about spending. The language model asks this; it never does the sums itself.
@@ -306,6 +312,14 @@ struct Analyst {
                            rows: open.map { InsightRow(emoji: "🙋", title: $0.person.name, detail: "\($0.splits) \($0.splits == 1 ? "split" : "splits")", value: money($0.owed)) },
                            followUps: [AskQuestion(text: open.count == 1 ? "Remind \(open[0].person.name)" : "Remind everyone who hasn't paid",
                                                    symbol: "bell.fill", intent: .act("remind everyone who hasn't paid"))])
+
+        case let .owedBy(name):
+            guard let balance = balances.first(where: { $0.person.name == name }), balance.owed > 0 else {
+                return Insight(headline: "$0.00", text: "\(name) doesn't owe you anything right now.")
+            }
+            return Insight(headline: money(balance.owed),
+                           text: "\(name) owes you \(money(balance.owed)) across \(balance.splits) \(balance.splits == 1 ? "split" : "splits").",
+                           followUps: [AskQuestion(text: "Remind them", symbol: "bell.fill", intent: .act("remind them"))])
 
         case .act:
             return Insight(text: "")
