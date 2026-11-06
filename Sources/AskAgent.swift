@@ -142,15 +142,26 @@ enum AskAgent {
 
     /// The intent is what was looked up, so the conversation can carry on from it.
     static func answer(_ question: String, analyst: Analyst, profile: [String], memory: Memory = Memory()) async -> (Insight, Engine, AskIntent?) {
+        // Money comes from the payments, never from a model: anything the exact code understands, it answers.
+        if let intent = AskRouter.intent(for: question, analyst: analyst) { return (analyst.answer(intent), .exact, intent) }
         #if canImport(FoundationModels)
         if #available(iOS 26.0, *), let reply = await LocalAnalyst.answer(question, analyst: analyst, profile: profile, memory: memory) {
             return (reply.0, .appleIntelligence, reply.1)
         }
         #endif
-        if let intent = AskRouter.intent(for: question, analyst: analyst) { return (analyst.answer(intent), .rules, intent) }
         if let recalled = memory.recalled { return (Insight(text: "You told me: \(recalled)."), .rules, nil) }
         return (Insight(text: "I can answer questions about your payments: totals, categories, shops, your biggest purchases, and who owes you. Try one of these.",
                         followUps: Suggester.questions(analyst, memory: [:], recent: [], limit: 4)), .rules, nil)
+    }
+
+    /// Every amount and count written in some text.
+    static func figures(in text: String) -> Set<String> {
+        Set(text.matches(of: #/\d[\d,]*(?:\.\d+)?/#).map { String($0.output).replacingOccurrences(of: ",", with: "") })
+    }
+
+    /// Whether a model's words only use figures it was actually given.
+    static func honest(_ reply: String, using known: String) -> Bool {
+        figures(in: reply).isSubset(of: figures(in: known))
     }
 
     static var modelAvailable: Bool {
@@ -166,9 +177,9 @@ enum AskAgent {
 @available(iOS 26.0, *)
 private final class ToolLog: @unchecked Sendable {
     private let lock = NSLock()
-    private var found: [(Insight, AskIntent)] = []
-    func add(_ insight: Insight, _ intent: AskIntent) { lock.lock(); found.append((insight, intent)); lock.unlock() }
-    var last: (Insight, AskIntent)? { lock.lock(); defer { lock.unlock() }; return found.last }
+    private var found: [(Insight, AskIntent, String)] = []
+    func add(_ insight: Insight, _ intent: AskIntent, _ told: String) { lock.lock(); found.append((insight, intent, told)); lock.unlock() }
+    var last: (Insight, AskIntent, String)? { lock.lock(); defer { lock.unlock() }; return found.last }
 }
 
 @available(iOS 26.0, *)
@@ -201,9 +212,10 @@ private enum LocalAnalyst {
         func call(arguments: Question) async throws -> String {
             let intent = Self.intent(arguments, analyst: analyst)
             let insight = analyst.answer(intent)
-            log.add(insight, intent)
             let rows = insight.rows.map { "\($0.title)\($0.detail.isEmpty ? "" : " (\($0.detail))"): \($0.value)" }.joined(separator: "; ")
-            return insight.text + (rows.isEmpty ? "" : " Details: \(rows).")
+            let told = insight.text + (rows.isEmpty ? "" : " Details: \(rows).")
+            log.add(insight, intent, told)
+            return told
         }
 
         static func intent(_ q: Question, analyst: Analyst) -> AskIntent {
@@ -244,9 +256,16 @@ private enum LocalAnalyst {
             """)
         do {
             let reply = try await session.respond(to: question).content
-            var insight = log.last?.0 ?? Insight(text: reply)
-            insight.text = reply.trimmingCharacters(in: .whitespacesAndNewlines)
-            return (insight, log.last?.1)
+            let said = reply.trimmingCharacters(in: .whitespacesAndNewlines)
+            let facts = memory.facts.joined(separator: " ")
+            guard let looked = log.last else {
+                // It never looked anything up, so it may not state a figure it wasn't told.
+                return AskAgent.honest(said, using: facts) ? (Insight(text: said), nil) : nil
+            }
+            var insight = looked.0
+            // A figure it wasn't given means the exact sentence is used instead of the model's.
+            if AskAgent.honest(said, using: looked.2 + " " + facts) { insight.text = said }
+            return (insight, looked.1)
         } catch {
             AskAgent.log.error("On-device model couldn't answer: \(String(describing: error), privacy: .public)")
             return nil

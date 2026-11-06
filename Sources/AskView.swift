@@ -66,6 +66,7 @@ struct AskView: View {
         .onDisappear { listener.stop() }
         .task {
             #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("-penny-reset") { chat.startOver(); chat.forget(nil) }
             if let questions = UserDefaults.standard.string(forKey: "ask-text"), !questions.isEmpty {
                 // Several questions in a row, split by "||", to check a whole conversation.
                 for question in questions.components(separatedBy: "||") {
@@ -208,6 +209,11 @@ struct AskView: View {
         }
         if PennyPlanner.isAction(question, context: chat.context) { return act(question, request: question) }
         let analyst = self.analyst
+        if let (intent, answer) = chat.budgetCheck(question, analyst: analyst) {
+            start(question)
+            chat.context.absorb(intent, answer: answer)
+            return after(.milliseconds(reduceMotion ? 0 : 700)) { finish(answer) }
+        }
         if let intent = chat.context.followUp(question, analyst: analyst) {
             memory.asked(question, topics: intent.topics)
             return reply(to: question, intent: intent, analyst: analyst)

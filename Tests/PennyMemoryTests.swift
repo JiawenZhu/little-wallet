@@ -71,6 +71,33 @@ final class PennyMemoryTests: XCTestCase {
         XCTAssertTrue(try XCTUnwrap(chat.command("did you send it?")).text.contains("only act after you tap"))
     }
 
+    func testPennyNeverStatesAFigureSheWasNotGiven() {
+        XCTAssertFalse(AskAgent.honest("You spent $127 on groceries!", using: ""), "no lookup, so no amounts")
+        XCTAssertFalse(AskAgent.honest("Groceries was $127.", using: "You spent $266.40 on groceries."))
+        XCTAssertTrue(AskAgent.honest("That's $266.40 on groceries, nice!", using: "You spent $266.40 on groceries across 4 payments."))
+        XCTAssertTrue(AskAgent.honest("I can look up your spending for you.", using: ""))
+        XCTAssertEqual(AskAgent.figures(in: "$1,284.60 across 3"), ["1284.60", "3"])
+    }
+
+    func testExactCodeAnswersWhatItUnderstands() async {
+        let (answer, engine, intent) = await AskAgent.answer("How much did I spend on groceries this month?", analyst: analyst, profile: [])
+        XCTAssertEqual(engine, .exact)
+        XCTAssertEqual(answer.headline, "$80.00")
+        XCTAssertEqual(intent, .total(.thisMonth, .groceries, nil))
+    }
+
+    func testBudgetIsRealSpendingAgainstARememberedAmount() throws {
+        let chat = PennyChat(defaults: fresh())
+        XCTAssertNil(chat.budgetCheck("Am I over budget?", analyst: analyst), "no budget told yet")
+        chat.remember("my grocery budget is 300 dollars")
+        let left = try XCTUnwrap(chat.budgetCheck("Is that over my grocery budget?", analyst: analyst))
+        XCTAssertEqual(left.1.headline, "$220.00")
+        XCTAssertTrue(left.1.text.contains("$80.00 of your $300.00"))
+        chat.remember("my dining budget is $10")
+        let over = try XCTUnwrap(chat.budgetCheck("How's my eating out budget?", analyst: analyst))
+        XCTAssertTrue(over.1.text.contains("over your $10.00"), over.1.text)
+    }
+
     func testPronounsAndChangesFollowTheConversation() throws {
         let splits = SplitService(defaults: fresh())
         let me = SplitPerson(id: "me", name: "You", colorIndex: 0, isMe: true)

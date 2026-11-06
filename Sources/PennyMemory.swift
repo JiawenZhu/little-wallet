@@ -223,6 +223,35 @@ final class PennyChat: ObservableObject {
         return nil
     }
 
+    /// "Am I over my grocery budget?": real spending against a budget you told her to remember.
+    func budgetCheck(_ question: String, analyst: Analyst) -> (AskIntent, Insight)? {
+        let text = question.lowercased()
+        guard text.contains("budget") else { return nil }
+        let mentioned = { (category: SpendCategory, words: String) in
+            let name = category.title.lowercased()
+            return words.contains(name) || (category == .groceries && words.contains("grocer")) || (category == .dining && words.contains("dining"))
+        }
+        let budgets = facts.filter { $0.lowercased().contains("budget") && PennyPlanner.amount(in: Self.withDollars($0.lowercased())) != nil }
+        let asked = SpendCategory.allCases.first { mentioned($0, text) } ?? context.category
+        let fact = budgets.first { fact in asked.map { mentioned($0, fact.lowercased()) } ?? false } ?? (budgets.count == 1 ? budgets[0] : nil)
+        guard let fact, let limit = PennyPlanner.amount(in: Self.withDollars(fact.lowercased())) else { return nil }
+        let category = asked ?? SpendCategory.allCases.first { mentioned($0, fact.lowercased()) }
+        let period = Period.find(in: text, now: analyst.now, calendar: analyst.calendar) ?? context.period ?? .thisMonth
+        let spent = Int((analyst.total(period, category: category) * 100).rounded())
+        let name = category?.title.lowercased() ?? "spending"
+        let intent = AskIntent.total(period, category, nil)
+        let phrase = period.phrase(now: analyst.now, calendar: analyst.calendar)
+        if spent > limit {
+            return (intent, Insight(headline: money(spent - limit), text: "You're \(money(spent - limit)) over your \(money(limit)) \(name) budget \(phrase): \(money(spent)) spent."))
+        }
+        return (intent, Insight(headline: money(limit - spent), text: "You've got \(money(limit - spent)) left. You've spent \(money(spent)) of your \(money(limit)) \(name) budget \(phrase)."))
+    }
+
+    /// "300 dollars" and a bare "300" both count as an amount in a budget.
+    private static func withDollars(_ fact: String) -> String {
+        fact.contains("$") ? fact : fact.replacing(#/\b(\d+(?:\.\d{1,2})?)\b/#) { "$\($0.output.1)" }
+    }
+
     /// A remembered fact that shares a real word with the question.
     func recall(_ question: String) -> String? {
         let common: Set<String> = ["what", "when", "where", "which", "does", "have", "that", "this", "with", "about", "much", "many", "your", "from", "there"]
