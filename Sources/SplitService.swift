@@ -71,7 +71,7 @@ enum SplitMark: Equatable {
     case waiting, settled
 }
 
-/// Talks to the Little Fridge Split server, which makes each friend's PayPal / Venmo settle-up link.
+/// Talks to the split server shared with Little Fridge, which makes each friend's PayPal / Venmo settle-up link.
 /// Money goes straight to the person who paid; the server never holds it.
 @MainActor
 final class SplitService: ObservableObject {
@@ -188,6 +188,7 @@ final class SplitService: ObservableObject {
         let id = "s" + UUID().uuidString.replacingOccurrences(of: "-", with: "").prefix(16).lowercased()
         let body: [String: Any] = [
             "id": id,
+            "app": "wallet",
             "title": title,
             "paidWith": method,
             "paidAt": ISO8601DateFormatter().string(from: paidAt),
@@ -322,7 +323,7 @@ final class SplitService: ObservableObject {
         do {
             (data, response) = try await URLSession.shared.data(for: request)
         } catch {
-            throw SplitError(message: "Couldn't reach Little Fridge Split. Check your connection and try again.")
+            throw SplitError(message: "Couldn't reach the payment server. Check your connection and try again.")
         }
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200..<300).contains(status) else {

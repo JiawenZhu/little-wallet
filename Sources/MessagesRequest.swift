@@ -77,7 +77,7 @@ struct MessageComposer: View {
             controller.recipients = draft.recipients
             controller.body = draft.body
             if let image = draft.image, MFMessageComposeViewController.canSendAttachments() {
-                controller.addAttachmentData(image, typeIdentifier: "public.png", filename: "Little Fridge split.png")
+                controller.addAttachmentData(image, typeIdentifier: "public.png", filename: "Little Wallet split.png")
             }
             return controller
         }
@@ -117,8 +117,8 @@ struct SplitRequestCard: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
-                Text("🧊").font(.system(size: 22))
-                Text("Little Fridge").font(.system(size: 20, weight: .heavy, design: .rounded))
+                Text("👛").font(.system(size: 22))
+                Text("Little Wallet").font(.system(size: 20, weight: .heavy, design: .rounded))
                 Spacer()
                 Text(reminder ? "Reminder" : "Split request").font(.system(size: 13, weight: .bold))
                     .padding(.horizontal, 10).padding(.vertical, 5)

@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// One line of PayPal account activity, as the Little Fridge Split server reads it with Transaction Search.
+/// One line of PayPal account activity, as the split server reads it with Transaction Search.
 struct PayPalActivity: Identifiable, Codable, Equatable {
     enum Kind: String, Codable { case received, sent, refund, transfer }
 
@@ -117,6 +117,9 @@ final class PayPalLink: ObservableObject {
     @discardableResult
     func sync(store: WalletStore, splits: SplitService = .shared) async -> (added: Int, settled: Int) {
         guard connected, !syncing else { return (0, 0) }
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-demo-film") { return (0, 0) }
+        #endif
         syncing = true
         defer { syncing = false }
         do {
@@ -332,7 +335,7 @@ struct PayPalSheet: View {
                 VStack(alignment: .leading, spacing: 14) {
                     benefit("checkmark.seal.fill", "Splits settle themselves", "When a friend pays their share by Venmo or PayPal, it's marked paid.")
                     benefit("bag.fill", "PayPal spending, counted", "Money you send or spend with PayPal joins this month's total.")
-                    benefit("lock.fill", "Read only", "Little Wallet only reads. Your PayPal keys stay on your Little Fridge Split server.")
+                    benefit("lock.fill", "Read only", "Little Wallet only reads. Your PayPal keys stay on your server, never on this phone.")
                 }
                 .padding(18)
                 .background(Theme.card, in: RoundedRectangle(cornerRadius: 22, style: .continuous))

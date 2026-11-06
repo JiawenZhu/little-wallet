@@ -114,7 +114,7 @@ enum PennyPlanner {
         case .refund?:
             guard let person = named.first else { return ask("Who should I refund? Try “Refund Jing $5”.") }
             guard let payment = lastPayment(from: person, splits: splits, paypal: paypal) else {
-                return Insight(text: "I can't find a PayPal or Venmo payment from \(person.name) to refund. Refunds work on payments that came in through Little Fridge Split.")
+                return Insight(text: "I can't find a PayPal or Venmo payment from \(person.name) to refund. Refunds work on payments that came in through your payment links.")
             }
             let full = payment.cents
             let back = min(cents ?? full, full)

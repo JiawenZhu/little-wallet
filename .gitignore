@@ -5,3 +5,8 @@ xcuserdata/
 *.xcarchive
 design/logs/
 Config/Secrets.xcconfig
+commercial-video/film/node_modules/
+commercial-video/film/rec/
+commercial-video/film/seq/
+commercial-video/film/out/
+commercial-video/film/probe/

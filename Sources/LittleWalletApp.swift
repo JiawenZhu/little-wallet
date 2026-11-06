@@ -68,7 +68,37 @@ extension WalletStore {
                                                     "demo-jing": SplitShare(name: "Jing Allen", total: "7.21", status: "sent", paidVia: nil, link: ""),
                                                 ]))
         }
+        if ProcessInfo.processInfo.arguments.contains("-demo-film") { filmData(at: at) }
         return store
+    }
+
+    /// The commercial's cast (`-demo-film`): Sam, Alex and Maya, with invented splits and sandbox-style PayPal activity.
+    private static func filmData(at: (Int, Int) -> Date) {
+        let me = SplitPerson(id: "me", name: "You", colorIndex: 0, isMe: true)
+        let service = SplitService.shared
+        let sam = service.rememberFriend(named: "Sam Lee", venmo: "sam@example.com") ?? me
+        let alex = service.rememberFriend(named: "Alex Kim", venmo: "alex@example.com") ?? me
+        let maya = service.rememberFriend(named: "Maya Chen", venmo: "maya@example.com") ?? me
+        service.adopt(SentSplit(id: "demo-tj", title: "Trader Joe's run", method: "PayPal", createdAt: at(0, 9), total: "84.00", itemIDs: [],
+                                people: [me, sam, alex], shares: [
+                                    sam.id: SplitShare(name: sam.name, total: "28.00", status: "opened", paidVia: nil, link: ""),
+                                    alex.id: SplitShare(name: alex.name, total: "28.00", status: "sent", paidVia: nil, link: ""),
+                                ]))
+        service.adopt(SentSplit(id: "demo-dinner", title: "Golden Dragon dinner", method: "PayPal", createdAt: at(2, 19), total: "61.92", itemIDs: [],
+                                people: [me, alex, maya], shares: [
+                                    alex.id: SplitShare(name: alex.name, total: "20.64", status: "sent", paidVia: nil, link: ""),
+                                    maya.id: SplitShare(name: maya.name, total: "20.64", status: "paid", paidVia: "Venmo", link: ""),
+                                ]))
+        let iso = { (date: Date) in date.formatted(.iso8601) }
+        PayPalLink.shared.preview([
+            PayPalActivity(id: "FILM1", date: iso(at(1, 20)), kind: .received, amount: "28.00", fee: "1.11", via: "Venmo", name: "Sam Lee",
+                           note: "Your share of Sunday brunch", items: [], split: nil),
+            PayPalActivity(id: "FILM2", date: iso(at(2, 21)), kind: .received, amount: "20.64", fee: "0.90", via: "Venmo", name: "Maya Chen",
+                           note: "Your share of Golden Dragon dinner", items: [], split: .init(id: "demo-dinner", person: maya.id)),
+            PayPalActivity(id: "FILM3", date: iso(at(4, 12)), kind: .received, amount: "42.00", fee: "1.51", via: "PayPal", name: "Alex Kim",
+                           note: "Concert tickets", items: [], split: nil),
+            PayPalActivity(id: "FILM4", date: iso(at(6, 9)), kind: .transfer, amount: "60.00", fee: "0.00", via: "PayPal", items: []),
+        ], balance: "212.48")
     }
 }
 #endif
