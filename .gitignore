@@ -5,9 +5,11 @@ xcuserdata/
 *.xcarchive
 design/logs/
 Config/Secrets.xcconfig
-commercial-video/film/node_modules/
-commercial-video/film/rec/
-commercial-video/film/seq/
-commercial-video/film/out/
-commercial-video/film/probe/
-commercial-video/
+
+# Commercial video media (keep markdown scripts, python/node scripts, and srt subtitles)
+commercial-video/film/
+commercial-video/audio/
+commercial-video/stems/
+commercial-video/autonoe_stems/
+commercial-video/*.mp4
+commercial-video/*.wav
