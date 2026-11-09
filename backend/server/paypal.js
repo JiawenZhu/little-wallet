@@ -24,7 +24,7 @@ export function createPayPal(env = process.env) {
       headers: {
         Authorization: `Bearer ${await accessToken()}`,
         "Content-Type": "application/json",
-        // Orders are created by the Little Fridge platform on behalf of the organizer (payee).
+        // Orders are created by the Little Wallet server on behalf of the organizer (payee).
         ...(env.PAYPAL_BN_CODE ? { "PayPal-Partner-Attribution-Id": env.PAYPAL_BN_CODE } : {}),
         ...headers,
       },
