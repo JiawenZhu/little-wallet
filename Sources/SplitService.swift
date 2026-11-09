@@ -117,7 +117,7 @@ final class SplitService: ObservableObject {
         return URL(string: "http://Evans-MacBook-Pro.local:8787")!
         #endif
         #else
-        return URL(string: "https://little-fridge-split.onrender.com")!
+        return URL(string: "https://little-wallet.onrender.com")!
         #endif
     }
 

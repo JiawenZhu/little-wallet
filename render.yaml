@@ -1,0 +1,45 @@
+services:
+  - type: web
+    name: little-wallet
+    runtime: node
+    rootDir: backend
+    # A paid plan: free services can't keep a disk, and friends' links live on it.
+    plan: starter
+    buildCommand: npm install --omit=dev
+    startCommand: npm start
+    healthCheckPath: /api/config
+    disk:
+      name: split-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: PAYPAL_ENV
+        value: sandbox
+      - key: DATA_DIR
+        value: /var/data
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: PAYPAL_WEBHOOK_ID
+        sync: false
+      - key: PAYPAL_BN_CODE
+        sync: false
+      # The second PayPal app: reads activity and sends Penny's invoices, refunds and payouts.
+      - key: ALT_CLIENT_ID
+        sync: false
+      - key: ALT_CLIENT_SECRET
+        sync: false
+      - key: ALT_BN_CODE
+        sync: false
+      - key: ALT_WEBHOOK_ID
+        sync: false
+      # Shared with the Little Wallet app; without it anyone could use the PayPal account.
+      - key: SPLIT_APP_KEY
+        sync: false
+      - key: ORGANIZER_VENMO
+        sync: false
+      - key: ORGANIZER_MERCHANT_ID
+        sync: false
