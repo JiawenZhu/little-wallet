@@ -22,10 +22,22 @@ struct ReportSheet: View {
     @State private var previewing: URL?
     @State private var failed = false
     @State private var ticks = 0
+    // How the PDF looks, remembered for next time.
+    @AppStorage("report-color") private var colorName = ReportColor.forest.rawValue
+    @AppStorage("report-logo") private var logo = true
+    @AppStorage("report-title") private var title = "Expense Report"
+    @AppStorage("report-name") private var name = ""
+    @FocusState private var typing: Bool
+
+    private var style: ReportStyle {
+        ReportStyle(color: ReportColor(rawValue: colorName) ?? .forest, logo: logo, title: title, name: name)
+    }
 
     private var report: ExpenseReport {
-        ExpenseReport(payments: splits.netted(store.transactions), start: start, end: end, categories: categories,
-                      yourShare: yourShare, withPhotos: withPhotos)
+        var report = ExpenseReport(payments: splits.netted(store.transactions), start: start, end: end, categories: categories,
+                                   yourShare: yourShare, withPhotos: withPhotos)
+        report.style = style
+        return report
     }
 
     var body: some View {
@@ -36,10 +48,13 @@ struct ReportSheet: View {
                     preview(report)
                     options
                     formats
+                    if format == .pdf { pdfLook.transition(.opacity.combined(with: .move(edge: .top))) }
                 }
+                .animation(.spring(response: 0.4, dampingFraction: 0.85), value: format)
                 .padding(18).padding(.bottom, 110)
             }
             .scrollIndicators(.hidden)
+            .scrollDismissesKeyboard(.interactively)
             .background(Theme.background.ignoresSafeArea())
             .navigationTitle("Reports")
             .navigationBarTitleDisplayMode(.inline)
@@ -270,6 +285,74 @@ struct ReportSheet: View {
         }
     }
 
+    // MARK: - PDF look
+
+    private var pdfLook: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("PDF look").font(.system(.headline, design: .rounded)).foregroundStyle(Theme.ink)
+                Spacer()
+                if style != ReportStyle() {
+                    Button("Reset") {
+                        ticks += 1
+                        withAnimation(.snappy) {
+                            colorName = ReportColor.forest.rawValue; logo = true; title = "Expense Report"; name = ""
+                        }
+                    }
+                    .font(.subheadline.weight(.semibold))
+                }
+            }
+            HStack(alignment: .top, spacing: 16) {
+                MiniPDF(style: style)
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Color").font(.caption.weight(.bold)).foregroundStyle(Theme.secondary).textCase(.uppercase)
+                    LazyVGrid(columns: Array(repeating: GridItem(.fixed(34), spacing: 10), count: 3), alignment: .leading, spacing: 10) {
+                        ForEach(ReportColor.allCases) { option in
+                            let on = option == style.color
+                            Button {
+                                ticks += 1
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.65)) { colorName = option.rawValue }
+                            } label: {
+                                Circle().fill(option.accent).frame(width: 30, height: 30)
+                                    .overlay {
+                                        if on { Image(systemName: "checkmark").font(.system(size: 12, weight: .heavy)).foregroundStyle(.white) }
+                                    }
+                                    .padding(2)
+                                    .overlay(Circle().strokeBorder(on ? option.accent : .clear, lineWidth: 2).padding(-1))
+                                    .scaleEffect(on ? 1.08 : 1)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(option.name).accessibilityAddTraits(on ? .isSelected : [])
+                        }
+                    }
+                    Toggle(isOn: $logo.animation(.snappy)) {
+                        Text("Little Wallet logo").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.ink)
+                    }
+                    .tint(style.color.accent)
+                }
+            }
+            VStack(spacing: 0) {
+                lookField("Title", text: $title, prompt: "Expense Report")
+                Divider()
+                lookField("Name", text: $name, prompt: "You or your company (optional)")
+            }
+            .padding(.horizontal, 16)
+            .background(Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+        .padding(16)
+        .background(Theme.card.opacity(0.6), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Theme.line, lineWidth: 1))
+    }
+
+    private func lookField(_ label: String, text: Binding<String>, prompt: String) -> some View {
+        HStack(spacing: 12) {
+            Text(label).font(.subheadline.weight(.semibold)).foregroundStyle(Theme.secondary).frame(width: 46, alignment: .leading)
+            TextField(prompt, text: text).font(.body.weight(.semibold)).foregroundStyle(Theme.ink)
+                .focused($typing).submitLabel(.done).textInputAutocapitalization(.words)
+        }
+        .frame(height: 48)
+    }
+
     // MARK: - Export
 
     private func exportBar(_ report: ExpenseReport) -> some View {
@@ -377,4 +460,47 @@ struct ShareSheet: UIViewControllerRepresentable {
 
 extension URL: @retroactive Identifiable {
     public var id: String { absoluteString }
+}
+
+/// A tiny first page of the PDF that follows the chosen look as you change it.
+private struct MiniPDF: View {
+    let style: ReportStyle
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 3) {
+                if style.logo {
+                    Image("WalletMark").resizable().scaledToFit().frame(width: 9, height: 9)
+                        .clipShape(RoundedRectangle(cornerRadius: 2))
+                    Text("Little Wallet").font(.system(size: 5, weight: .heavy, design: .rounded))
+                } else {
+                    Text(style.shownName ?? style.shownTitle).font(.system(size: 5, weight: .heavy, design: .rounded)).lineLimit(1)
+                }
+                Spacer(minLength: 0)
+            }
+            .foregroundStyle(style.color.accent)
+            Rectangle().fill(style.color.accent).frame(height: 1)
+            Text(style.shownTitle).font(.system(size: 9, weight: .heavy, design: .rounded)).foregroundStyle(Theme.ink)
+                .lineLimit(1).minimumScaleFactor(0.5)
+            if style.logo, let name = style.shownName {
+                Text(name).font(.system(size: 5, weight: .bold)).foregroundStyle(style.color.accent).lineLimit(1)
+            }
+            ForEach([0.9, 0.6, 0.4, 0.25], id: \.self) { width in
+                HStack(spacing: 3) {
+                    RoundedRectangle(cornerRadius: 1).fill(Theme.line).frame(width: 18, height: 3)
+                    Capsule().fill(style.color.soft).frame(height: 3).overlay(alignment: .leading) {
+                        GeometryReader { geo in Capsule().fill(style.color.accent).frame(width: geo.size.width * width) }
+                    }
+                }
+            }
+            Spacer(minLength: 0)
+            RoundedRectangle(cornerRadius: 2).fill(style.color.accent).frame(height: 8)
+        }
+        .padding(8)
+        .frame(width: 96, height: 124)
+        .background(.white, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .shadow(color: .black.opacity(0.12), radius: 6, y: 3)
+        .animation(.snappy, value: style)
+        .accessibilityHidden(true)
+    }
 }

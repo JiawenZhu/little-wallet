@@ -53,6 +53,44 @@ enum ReportFormat: String, CaseIterable, Identifiable {
 }
 
 /// An expense report: the payments in a date range, totalled by category and card, ready to save as PDF or CSV.
+/// The PDF's color: the rules, total bars and links.
+enum ReportColor: String, CaseIterable, Identifiable {
+    case forest, ocean, plum, coral, charcoal, gold
+
+    var id: Self { self }
+    var name: String { rawValue.capitalized }
+    var accent: Color {
+        switch self {
+        case .forest: return Theme.accent
+        case .ocean: return Color(hex: "#2F5E8C")
+        case .plum: return Color(hex: "#6B3F6E")
+        case .coral: return Color(hex: "#C4553A")
+        case .charcoal: return Color(hex: "#33363A")
+        case .gold: return Color(hex: "#A87A1E")
+        }
+    }
+    /// The light tint behind bars.
+    var soft: Color { self == .forest ? Theme.softGreen : accent.opacity(0.16) }
+}
+
+/// How the PDF looks: its color, whether it carries the Little Wallet logo, and its own title and name.
+struct ReportStyle: Equatable {
+    var color: ReportColor = .forest
+    var logo = true
+    var title = "Expense Report"
+    /// A person or company printed under the title, like "Jiawen Zhu" or "Acme Inc.".
+    var name = ""
+
+    var shownTitle: String {
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? "Expense Report" : trimmed
+    }
+    var shownName: String? {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+}
+
 struct ExpenseReport {
     struct Group: Identifiable {
         var category: SpendCategory
@@ -69,6 +107,7 @@ struct ExpenseReport {
     var yourShare = false
     var withPhotos = true
     var made: Date = .now
+    var style = ReportStyle()
 
     init(payments all: [Payment], start: Date, end: Date, categories: Set<SpendCategory> = Set(SpendCategory.allCases),
          yourShare: Bool = false, withPhotos: Bool = true) {
@@ -107,7 +146,7 @@ struct ExpenseReport {
 
     /// "Little Wallet Oct 1 – Oct 31, 2026"
     var fileName: String {
-        "Little Wallet \(rangeText)".replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ",", with: "")
+        "\(style.logo ? "Little Wallet" : style.shownName ?? style.shownTitle) \(rangeText)".replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ",", with: "")
     }
 
     // MARK: - CSV
@@ -248,17 +287,23 @@ private struct ReportPage<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 8) {
-                Image("WalletMark").resizable().scaledToFit().frame(width: 22, height: 22)
-                Text("Little Wallet").font(.system(size: 12, weight: .heavy, design: .rounded)).foregroundStyle(Theme.accent)
+                if report.style.logo {
+                    Image("WalletMark").resizable().scaledToFit().frame(width: 22, height: 22)
+                        .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+                    Text("Little Wallet").font(.system(size: 12, weight: .heavy, design: .rounded)).foregroundStyle(report.style.color.accent)
+                } else {
+                    Text(report.style.shownName ?? report.style.shownTitle)
+                        .font(.system(size: 12, weight: .heavy, design: .rounded)).foregroundStyle(report.style.color.accent)
+                }
                 Spacer()
-                Text("Expense report · \(report.rangeText)").font(.system(size: 9, weight: .medium)).foregroundStyle(Theme.secondary)
+                Text("\(report.style.shownTitle) · \(report.rangeText)").font(.system(size: 9, weight: .medium)).foregroundStyle(Theme.secondary)
             }
             .padding(.bottom, 10)
-            Rectangle().fill(Theme.accent).frame(height: 2)
+            Rectangle().fill(report.style.color.accent).frame(height: 2)
             content.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).padding(.top, 18)
             Rectangle().fill(Theme.line).frame(height: 0.5)
             HStack {
-                Text("Made with Little Wallet on \(report.made.formatted(date: .abbreviated, time: .shortened))")
+                Text("\(report.style.logo ? "Made with Little Wallet" : "Made") on \(report.made.formatted(date: .abbreviated, time: .shortened))")
                 Spacer()
                 Text("Page \(number) of \(of)")
             }
@@ -277,7 +322,12 @@ private struct ReportSummaryPage: View {
         VStack(alignment: .leading, spacing: 22) {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Expense Report").font(.system(size: 30, weight: .heavy, design: .rounded)).foregroundStyle(Theme.ink)
+                    Text(report.style.shownTitle).font(.system(size: 30, weight: .heavy, design: .rounded)).foregroundStyle(Theme.ink)
+                        .lineLimit(2).minimumScaleFactor(0.6)
+                    // Without the logo the name is already the page header.
+                    if report.style.logo, let name = report.style.shownName {
+                        Text(name).font(.system(size: 13, weight: .bold)).foregroundStyle(report.style.color.accent)
+                    }
                     Text(report.rangeText).font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.secondary)
                 }
                 Spacer()
@@ -337,8 +387,8 @@ private struct ReportSummaryPage: View {
                     row.0.frame(maxWidth: .infinity, alignment: .leading)
                     Text("\(row.1)").monospacedDigit().frame(width: 70, alignment: .trailing)
                     GeometryReader { geo in
-                        Capsule().fill(Theme.softGreen).overlay(alignment: .leading) {
-                            Capsule().fill(Theme.accent).frame(width: max(3, geo.size.width * row.2 / total))
+                        Capsule().fill(report.style.color.soft).overlay(alignment: .leading) {
+                            Capsule().fill(report.style.color.accent).frame(width: max(3, geo.size.width * row.2 / total))
                         }
                     }
                     .frame(width: 84, height: 5).padding(.leading, 16)
@@ -357,7 +407,7 @@ private struct ReportSummaryPage: View {
             }
             .font(.system(size: 12)).foregroundStyle(.white)
             .padding(.horizontal, 10).padding(.vertical, 9)
-            .background(Theme.accent)
+            .background(report.style.color.accent)
         }
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Theme.line, lineWidth: 0.5))
@@ -400,7 +450,7 @@ private struct ReportTablePage: View {
                         Text(p.category.title).frame(width: 70, alignment: .leading).lineLimit(1)
                         Text(p.card.isEmpty ? "—" : p.card).frame(width: 72, alignment: .leading).lineLimit(1)
                         Group {
-                            if let page = links[p.id] { Text("p. \(page)").foregroundStyle(Theme.accent).fontWeight(.semibold) }
+                            if let page = links[p.id] { Text("p. \(page)").foregroundStyle(report.style.color.accent).fontWeight(.semibold) }
                             else if ReceiptVault.has(p.id) { Image(systemName: "paperclip") }
                             else { Text("") }
                         }

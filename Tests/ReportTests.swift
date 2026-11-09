@@ -40,4 +40,23 @@ final class ReportTests: XCTestCase {
         let document = CGPDFDocument(url as CFURL)
         XCTAssertEqual(document?.numberOfPages, 3)
     }
+
+    func testStyleNamesTheFileAndFallsBackToDefaults() {
+        var report = ExpenseReport(payments: [], start: .now, end: .now)
+        XCTAssertTrue(report.fileName.hasPrefix("Little Wallet "))
+        report.style = ReportStyle(color: .ocean, logo: false, title: "  ", name: "Acme Inc.")
+        XCTAssertTrue(report.fileName.hasPrefix("Acme Inc. "))
+        XCTAssertEqual(report.style.shownTitle, "Expense Report")
+        report.style.name = ""
+        report.style.title = "Trip to Tokyo"
+        XCTAssertTrue(report.fileName.hasPrefix("Trip to Tokyo "))
+    }
+
+    @MainActor func testStyledPDFStillWrites() throws {
+        var report = ExpenseReport(payments: [Payment(merchant: "Rent", amount: 1500, category: .bills)],
+                                   start: .now.addingTimeInterval(-86_400), end: .now)
+        report.style = ReportStyle(color: .plum, logo: false, title: "Q4 costs", name: "Jiawen")
+        let url = try report.file(.pdf)
+        XCTAssertGreaterThan(try Data(contentsOf: url).count, 1000)
+    }
 }
