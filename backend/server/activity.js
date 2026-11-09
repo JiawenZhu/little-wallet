@@ -24,7 +24,7 @@ export function toActivity(row) {
   const payer = row.payer_info?.payer_name || {};
   const shipping = row.shipping_info?.name;
   const venmo = /venmo/i.test(`${info.instrument_sub_type || ""} ${info.custom_field || ""}`);
-  // Splits made by Little Fridge Split put "splitId|person|method" in custom_id.
+  // Splits made by this server put "splitId|person|method" in custom_id.
   const [splitId, person] = String(info.custom_field || "").split("|");
   return {
     id: info.transaction_id,

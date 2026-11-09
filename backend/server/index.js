@@ -1,4 +1,4 @@
-// Little Fridge Split backend: settle-up pages and PayPal/Venmo payments that go straight to the organizer.
+// Little Wallet server: settle-up pages and PayPal/Venmo payments that go straight to the organizer.
 import { createServer } from "node:http";
 import { readFile, mkdir } from "node:fs/promises";
 import { join, extname, normalize } from "node:path";
@@ -365,5 +365,5 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const root = join(fileURLToPath(import.meta.url), "../..");
   const server = await createSplitServer({ root });
   const port = Number(process.env.PORT || 8787);
-  server.listen(port, () => console.log(`Little Fridge Split on http://localhost:${port}/s/demo-sam`));
+  server.listen(port, () => console.log(`Little Wallet server on http://localhost:${port}/s/demo-sam`));
 }
