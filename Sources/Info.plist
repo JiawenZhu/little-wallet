@@ -18,6 +18,8 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>SplitAppKey</key>
 	<string>$(SPLIT_APP_KEY)</string>
 	<key>NSCameraUsageDescription</key>
