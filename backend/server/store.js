@@ -9,8 +9,9 @@ export async function openStore(file, seedFile) {
     data = JSON.parse(await readFile(file, "utf8"));
   } catch {
     data = { splits: {}, tokens: {}, payments: [] };
-    if (seedFile) addSplit(data, JSON.parse(await readFile(seedFile, "utf8")));
   }
+  // The demo split is reloaded from its file at every start, so changes to it reach a server whose data is kept.
+  if (seedFile) addSplit(data, JSON.parse(await readFile(seedFile, "utf8")));
   let saving = Promise.resolve();
   const store = {
     data,

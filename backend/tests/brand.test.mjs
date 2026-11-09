@@ -33,7 +33,7 @@ test("the pay page and PayPal show the app that made the split", async () => {
     assert.equal((await (await fetch(`${base}/api/shares/${fridge}`)).json()).app.name, "Little Fridge", "no app means Little Fridge");
     assert.equal((await post(`/api/shares/${fridge}/order`, {})).status, 200);
     assert.equal(order.purchase_units[0].soft_descriptor, "LITTLE FRIDGE", "Little Fridge splits keep their own statement name");
-    assert.equal((await (await fetch(`${base}/api/shares/demo-sam`)).json()).app.name, "Little Fridge", "existing splits stay as they were");
+    assert.equal((await (await fetch(`${base}/api/shares/demo-sam`)).json()).app.name, "Little Wallet", "the demo split is Little Wallet's");
 
     const odd = await tokenOf({ ...split("nonsense"), id: "sodd" });
     assert.equal((await (await fetch(`${base}/api/shares/${odd}`)).json()).app.name, "Little Fridge");

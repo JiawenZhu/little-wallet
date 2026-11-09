@@ -1,5 +1,6 @@
 {
   "id": "tj-2026-10-26",
+  "app": "wallet",
   "title": "Trader Joe's run",
   "paidWith": "Apple Pay",
   "paidAt": "2026-10-26T18:42:00-05:00",
