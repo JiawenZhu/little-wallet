@@ -13,8 +13,9 @@ import { createEvents } from "./events.js";
 const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png", ".json": "application/json" };
 // Two apps share this server. A split carries which one made it; splits with no app are Little Fridge's.
 const APPS = {
-  fridge: { name: "Little Fridge", logo: "/img/logo.png", emoji: "🧊" },
-  wallet: { name: "Little Wallet", logo: "/img/wallet.png", emoji: "👛" },
+  // `statement` is what friends see on their bank or card statement (PayPal allows 22 characters).
+  fridge: { name: "Little Fridge", logo: "/img/logo.png", emoji: "🧊", statement: "LITTLE FRIDGE" },
+  wallet: { name: "Little Wallet", logo: "/img/wallet.png", emoji: "👛", statement: "LITTLE WALLET" },
 };
 const appOf = split => APPS[split.app] ?? APPS.fridge;
 const fail = (status, message) => Object.assign(new Error(message), { status });
@@ -144,7 +145,7 @@ export async function createSplitServer({ root, env = process.env, paypalRequest
           custom_id: `${split.id}|${person}`,
           // Shown on the PayPal / Venmo receipt: the food's emoji make it easy to recognise.
           description: `${foodEmoji(share)} ${split.title} split with ${split.organizer.name || split.people[split.organizer.id]?.name || "a friend"}`.trim().slice(0, 127),
-          soft_descriptor: "LITTLE FRIDGE",
+          soft_descriptor: appOf(split).statement,
           // Without a merchant ID the order pays the PayPal account that owns the REST app (option 3: you are the
           // organizer). Paying other organizers needs PayPal partner approval; see SPIKE.md.
           ...(split.organizer.merchantId ? { payee: { merchant_id: split.organizer.merchantId } } : {}),
