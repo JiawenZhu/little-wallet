@@ -4,7 +4,7 @@ import AppIntents
 /// opening the app.
 struct LogPaymentIntent: AppIntent {
     static var title: LocalizedStringResource = "Save Payment"
-    static var description = IntentDescription("Save a payment to Little Wallet. Add it to a Wallet Payment automation to track every Apple Pay tap.")
+    static var description = IntentDescription("Save a payment to Little Wallet. Add it to a Wallet Payment automation to track every tap.")
     static var openAppWhenRun = false
 
     @Parameter(title: "Merchant", default: "")
@@ -38,7 +38,7 @@ struct LittleWalletShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(intent: LogPaymentIntent(),
                     phrases: ["Save a payment to \(.applicationName)", "Track a payment with \(.applicationName)",
-                              "Save an Apple Pay payment to \(.applicationName)", "Log a payment in \(.applicationName)"],
+                              "Save a card tap to \(.applicationName)", "Log a payment in \(.applicationName)"],
                     shortTitle: "Save Payment", systemImageName: "creditcard.fill")
     }
 }

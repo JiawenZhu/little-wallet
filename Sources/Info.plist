@@ -6,10 +6,11 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>com.jiawenzhu.littlewallet</string>
+			<string>com.jiawenzhu.littlefridge</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>littlewallet</string>
+				<string>littlefridge</string>
 			</array>
 		</dict>
 	</array>
@@ -32,5 +33,16 @@
 	<string>Little Wallet turns what you say into payments on your phone.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Little Wallet connects to a split server on your network while it is being tested.</string>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
 </dict>
 </plist>
