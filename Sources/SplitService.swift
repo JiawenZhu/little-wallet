@@ -110,12 +110,10 @@ final class SplitService: ObservableObject {
     /// The server in use. Override with `defaults write … split-server-url` or `-split-server-url <url>` for testing.
     var serverURL: URL {
         if let custom = defaults.string(forKey: "split-server-url"), let url = URL(string: custom) { return url }
-        #if DEBUG
-        #if targetEnvironment(simulator)
+        // The simulator talks to the server running on this Mac; a real phone uses the hosted one, so links
+        // friends get work anywhere.
+        #if DEBUG && targetEnvironment(simulator)
         return URL(string: "http://localhost:8787")!
-        #else
-        return URL(string: "http://Evans-MacBook-Pro.local:8787")!
-        #endif
         #else
         return URL(string: "https://little-wallet.onrender.com")!
         #endif
