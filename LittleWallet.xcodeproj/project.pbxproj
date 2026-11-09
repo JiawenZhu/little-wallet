@@ -20,6 +20,7 @@
 		33DD901EFBF7491069F47AA5 /* Wallet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B06E9B3B526FE77EFE20AFF /* Wallet.swift */; };
 		3599D96998F25AE3C2F57D94 /* PayPalActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB0F1C1832E4DF3A4E2F063B /* PayPalActions.swift */; };
 		3C42385F9F7523937A67B930 /* PaymentDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A43E26128DEBE851820F9560 /* PaymentDetailSheet.swift */; };
+		43FDA60086A647E78CC0ECF6 /* Recurring.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE94EA93E90816A082BEEF83 /* Recurring.swift */; };
 		5275FC3DB371D81EA231D5FA /* AskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05348444BF67E79A56C50A42 /* AskView.swift */; };
 		531E4B544DB7347B8537F9EE /* PayPalActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDFD43DCC0063B278D377200 /* PayPalActivity.swift */; };
 		58DBBB17B446C863CF3749BD /* CategoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABA79BEF7398A06C6440ADAA /* CategoryTests.swift */; };
@@ -29,6 +30,7 @@
 		79EC7C28123EBCA5656196A8 /* VoiceMotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4EE0138E8F0B14EB4038080 /* VoiceMotion.swift */; };
 		7E9E0D9D1168B5BB898342D9 /* PayPalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1CAD2589CC9209C52219F46 /* PayPalTests.swift */; };
 		82B6D43862855B6C64B4DDC4 /* Insights.swift in Sources */ = {isa = PBXBuildFile; fileRef = 765DFBB34DF6CBE31424562E /* Insights.swift */; };
+		89E1C138E26A4360AE7C76C3 /* RecurringTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ECE8174C655B14EB99BB53D /* RecurringTests.swift */; };
 		8C0D75B1C160F7D1A45A7A98 /* VoiceAgent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AD324AE38ABBA6678D7986E /* VoiceAgent.swift */; };
 		92EE60910F53BE2F9AD236C3 /* ReportSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DA18D0850C01F8239CF8103 /* ReportSheet.swift */; };
 		9842BEDE9D8B867656D910A4 /* FriendPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = F62F6962A752F26B1C1B7C05 /* FriendPicker.swift */; };
@@ -68,6 +70,7 @@
 		05348444BF67E79A56C50A42 /* AskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AskView.swift; sourceTree = "<group>"; };
 		10D0986F3F9221D052BB5D27 /* ReceiptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReceiptTests.swift; sourceTree = "<group>"; };
 		1E039B08880F615BB99F8299 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		1ECE8174C655B14EB99BB53D /* RecurringTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringTests.swift; sourceTree = "<group>"; };
 		23249D951487DAA8452FD484 /* TapNotifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapNotifier.swift; sourceTree = "<group>"; };
 		272776E5FC9AFC7A42BF94A3 /* ReceiptReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReceiptReader.swift; sourceTree = "<group>"; };
 		28F0E07E5F4A6F679025EFDD /* LittleWalletTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = LittleWalletTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -97,6 +100,7 @@
 		ABA79BEF7398A06C6440ADAA /* CategoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryTests.swift; sourceTree = "<group>"; };
 		AD99C46CC1F45397EFACAE62 /* LittleWallet.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = LittleWallet.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		ADBD3FCC85871BCAE2788876 /* AskAgent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AskAgent.swift; sourceTree = "<group>"; };
+		AE94EA93E90816A082BEEF83 /* Recurring.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Recurring.swift; sourceTree = "<group>"; };
 		AF927EF4B727EFDDD184A75A /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		BB0406FBED33E0E4F0514881 /* MonthSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthSheets.swift; sourceTree = "<group>"; };
 		C4EE0138E8F0B14EB4038080 /* VoiceMotion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceMotion.swift; sourceTree = "<group>"; };
@@ -143,6 +147,7 @@
 				272776E5FC9AFC7A42BF94A3 /* ReceiptReader.swift */,
 				D5F2AD74B076E606E4D8F1D1 /* ReceiptScanSheet.swift */,
 				593EB9322A3A744DDF00DDD7 /* ReceiptVault.swift */,
+				AE94EA93E90816A082BEEF83 /* Recurring.swift */,
 				5DA18D0850C01F8239CF8103 /* ReportSheet.swift */,
 				D70D91444752966A17FC24C1 /* SettleUpPane.swift */,
 				DA508F272E9A010BBC5EC338 /* SplitService.swift */,
@@ -177,6 +182,7 @@
 				3662C208D8F0254B6C72ADFF /* PennyActionTests.swift */,
 				64B299A72B32D784FB4A5755 /* PennyMemoryTests.swift */,
 				10D0986F3F9221D052BB5D27 /* ReceiptTests.swift */,
+				1ECE8174C655B14EB99BB53D /* RecurringTests.swift */,
 				F078937A2424E8F2B8B185D4 /* ReportTests.swift */,
 				A10427ED38DDA9D4CC11AC35 /* VoiceParserTests.swift */,
 				511B5AF4480839003710DB5C /* WalletTests.swift */,
@@ -301,6 +307,7 @@
 				F9935699C669E75601CDB774 /* PennyActionTests.swift in Sources */,
 				0A367EF08E2658876E029655 /* PennyMemoryTests.swift in Sources */,
 				14F6F1812E3DD34657CB9364 /* ReceiptTests.swift in Sources */,
+				89E1C138E26A4360AE7C76C3 /* RecurringTests.swift in Sources */,
 				1CBEFC904485B9A26307A185 /* ReportTests.swift in Sources */,
 				0BB4BA3EF716666DDD218081 /* VoiceParserTests.swift in Sources */,
 				FF1191D72D6374BDA413CC97 /* WalletTests.swift in Sources */,
@@ -334,6 +341,7 @@
 				A1413A898B20C8A88D85821F /* ReceiptReader.swift in Sources */,
 				9AA5627D7E96BE3FFBB0ED11 /* ReceiptScanSheet.swift in Sources */,
 				ABE9B6DF512338257A9DB423 /* ReceiptVault.swift in Sources */,
+				43FDA60086A647E78CC0ECF6 /* Recurring.swift in Sources */,
 				92EE60910F53BE2F9AD236C3 /* ReportSheet.swift in Sources */,
 				0B33F79C2CA72449031FF7A9 /* SettleUpPane.swift in Sources */,
 				FAB3E84CFA8E9FB25376C2C1 /* SplitService.swift in Sources */,

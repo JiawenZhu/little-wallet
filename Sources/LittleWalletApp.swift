@@ -12,7 +12,7 @@ struct LittleWalletApp: App {
                 .onOpenURL { url in _ = store.handleIncomingURL(url) }
                 // Hear about payments live only while the app is open.
                 .onChange(of: phase, initial: true) { _, now in
-                    if now == .active { LiveUpdates.shared.start() } else if now == .background { LiveUpdates.shared.stop() }
+                    if now == .active { store.logDueRecurring(); LiveUpdates.shared.start() } else if now == .background { LiveUpdates.shared.stop() }
                 }
                 .preferredColorScheme(.light)
                 .tint(Theme.accent)

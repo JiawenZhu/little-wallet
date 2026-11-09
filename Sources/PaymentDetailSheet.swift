@@ -133,6 +133,14 @@ struct PaymentDetailSheet: View {
                 Label(tx.source.label, systemImage: tx.source == .tap ? "wave.3.right" : tx.source == .voice ? "mic" : "hand.tap")
                     .font(.body.weight(.semibold))
             }
+            if let bill = store.recurringBill(tx.recurringID) {
+                Divider()
+                row("Repeats") {
+                    Label("\(bill.every.short) · next \(bill.next.formatted(.dateTime.month(.abbreviated).day()))",
+                          systemImage: "arrow.triangle.2.circlepath")
+                        .font(.body.weight(.semibold))
+                }
+            }
             if let note = tx.note {
                 Divider()
                 row("Note") { Text(note).font(.body).multilineTextAlignment(.trailing) }

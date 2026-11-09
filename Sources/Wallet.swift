@@ -45,6 +45,8 @@ struct Payment: Identifiable, Codable, Equatable {
     var paidBack: Double? = nil
     /// The payment's id where it came from, like a PayPal transaction id, so it's never imported twice.
     var externalID: String? = nil
+    /// The repeating payment that added this one, like a monthly bill.
+    var recurringID: UUID? = nil
 
     var cents: Int { Int((amount * 100).rounded()) }
     /// What it really cost you: the amount less what friends paid back.
@@ -83,9 +85,12 @@ final class WalletStore: ObservableObject {
     @Published private(set) var lastTapAt: Date?
     /// A payment to open, from a tapped notification.
     @Published var openRequest: UUID?
+    /// Bills and subscriptions that add themselves when they come due.
+    @Published var recurring: [Recurring] = []
 
     private let key = "little-wallet-transactions-v1"
     private let tapKey = "little-wallet-last-tap-v1"
+    private let recurringKey = "little-wallet-recurring-v1"
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
@@ -94,6 +99,9 @@ final class WalletStore: ObservableObject {
             transactions = saved
         }
         lastTapAt = defaults.object(forKey: tapKey) as? Date
+        if let data = defaults.data(forKey: recurringKey), let saved = try? JSONDecoder().decode([Recurring].self, from: data) {
+            recurring = saved
+        }
     }
 
     func transaction(_ id: UUID) -> Payment? { transactions.first { $0.id == id } }
@@ -235,6 +243,21 @@ final class WalletStore: ObservableObject {
         guard !whole.isEmpty else { return "" }
         let grouped = Int(whole).map { $0.formatted(.number.grouping(.automatic)) } ?? whole
         return grouped + (sawPoint ? "." + fraction : "")
+    }
+
+    /// One payment from a repeating bill, added without saving; `sortAndSave` follows.
+    func appendRecurring(_ bill: Recurring, on date: Date) {
+        transactions.append(Payment(date: date, merchant: bill.merchant, amount: bill.amount, card: bill.card,
+                                    category: bill.category, source: .manual, note: bill.note, recurringID: bill.id))
+    }
+
+    func sortAndSave() {
+        transactions.sort { $0.date > $1.date }
+        save()
+    }
+
+    func saveRecurring() {
+        if let data = try? JSONEncoder().encode(recurring) { defaults.set(data, forKey: recurringKey) }
     }
 
     private func save() {

@@ -25,6 +25,8 @@ struct AddPaymentSheet: View {
     @State private var splitting: UUID?
     @State private var askingCard = false
     @State private var pickingDate = false
+    @State private var repeats = false
+    @State private var every: RepeatEvery = .monthly
     // Haptics and the "no" shake.
     @State private var keyTaps = 0
     @State private var refusals = 0
@@ -167,11 +169,12 @@ struct AddPaymentSheet: View {
                     categoryPicker
                     cardPicker
                     whenPicker
+                    repeatSection
                     itemsSection
                     field("Note") {
                         TextField("Optional", text: $note, axis: .vertical).lineLimit(1...3).focused($focus, equals: .note)
                     }
-                    if editing == nil { splitToggle }
+                    if editing == nil && !startsLater { splitToggle }
                 }
                 .padding(18)
             }
@@ -304,12 +307,17 @@ struct AddPaymentSheet: View {
                     date = picked
                     picks += 1
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { pickingDate = false }
-                }), in: ...Date.now.addingTimeInterval(3600), displayedComponents: .date)
+                }), in: ...latestDay, displayedComponents: .date)
                 .datePickerStyle(.graphical).tint(Theme.accent).labelsHidden()
                 .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
             }
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.85), value: pickingDate)
+    }
+
+    /// A repeating bill can start up to a year ahead; a one-off payment can't be in the future.
+    private var latestDay: Date {
+        repeats ? Calendar.current.date(byAdding: .year, value: 1, to: .now)! : .now.addingTimeInterval(3600)
     }
 
     private func chip(_ title: String, on: Bool, symbol: String? = nil, action: @escaping () -> Void) -> some View {
@@ -386,7 +394,7 @@ struct AddPaymentSheet: View {
 
     private var saveButton: some View {
         Button(action: save) {
-            Text(canSave ? "Save $\(shownAmount)" : merchant.isEmpty ? "Say what it was for" : "Add an amount")
+            Text(canSave ? (repeats && bill == nil ? "Repeat $\(shownAmount) \(every.short.lowercased())" : "Save $\(shownAmount)") : merchant.isEmpty ? "Say what it was for" : "Add an amount")
                 .font(.title3.weight(.bold)).foregroundStyle(.white)
                 .frame(maxWidth: .infinity).frame(height: 58)
                 .background(Theme.accent.opacity(canSave ? 1 : 0.35), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
@@ -408,6 +416,190 @@ struct AddPaymentSheet: View {
         .background(Theme.card, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
+    // MARK: - Repeats
+
+    /// The bill this payment belongs to, when editing one that repeats.
+    private var bill: Recurring? { store.recurringBill(editing?.recurringID) }
+    /// A repeating bill whose first payment is still to come: nothing is added today.
+    private var startsLater: Bool { repeats && Calendar.current.startOfDay(for: date) > Calendar.current.startOfDay(for: .now) }
+
+    private static let presets: [(emoji: String, name: String, category: SpendCategory)] = [
+        ("⚡️", "Electric bill", .bills), ("🏠", "Rent", .bills), ("📱", "Phone bill", .bills), ("🌐", "Internet", .bills),
+        ("💧", "Water bill", .bills), ("🛡️", "Insurance", .bills), ("📺", "Streaming", .fun), ("💪", "Gym", .health),
+    ]
+
+    private var repeatSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Button {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.82)) {
+                    repeats.toggle()
+                    if !repeats && date > .now.addingTimeInterval(3600) { date = .now }
+                    if repeats && !pickedCategory && autoName == nil && merchant.isEmpty { category = .bills }
+                }
+                picks += 1
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .font(.system(size: 19, weight: .bold))
+                        .foregroundStyle(repeats ? .white : Theme.accent)
+                        .frame(width: 44, height: 44)
+                        .background(repeats ? Theme.accent : Theme.softGreen, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .rotationEffect(.degrees(repeats ? 180 : 0))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(repeats ? "Repeats \(every.phrase)" : "Repeat this payment").font(.headline).foregroundStyle(Theme.ink)
+                            .contentTransition(.opacity)
+                        Text(repeatSubtitle).font(.caption).foregroundStyle(Theme.secondary)
+                    }
+                    Spacer()
+                    Capsule().fill(repeats ? Theme.accent : Theme.line)
+                        .frame(width: 50, height: 30)
+                        .overlay(alignment: repeats ? .trailing : .leading) {
+                            Circle().fill(.white).padding(3).shadow(color: .black.opacity(0.12), radius: 2, y: 1)
+                        }
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(repeats ? [.isButton, .isSelected] : .isButton)
+            .accessibilityIdentifier("payment-repeat")
+
+            if repeats {
+                VStack(alignment: .leading, spacing: 14) {
+                    if editing == nil { presetRow }
+                    frequencyRow
+                    upcoming
+                    Text(repeatSummary).font(.footnote.weight(.semibold)).foregroundStyle(Theme.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if bill != nil {
+                        Text("Changes apply from the next payment. Turn it off and save to stop it.")
+                            .font(.caption).foregroundStyle(Theme.secondary)
+                    }
+                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(repeats ? Theme.softGreen.opacity(0.55) : Theme.card, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(repeats ? Theme.accent.opacity(0.35) : .clear, lineWidth: 1.5))
+        .animation(.spring(response: 0.4, dampingFraction: 0.82), value: repeats)
+        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: every)
+    }
+
+    private var repeatSubtitle: String {
+        if !repeats { return "Rent, bills, subscriptions — added for you" }
+        if bill == nil && editing != nil { return "This payment becomes the first one" }
+        if editing != nil && bill != nil { return "Next one \(bill!.next.formatted(.dateTime.month(.wide).day()))" }
+        return "Added on its own, every time it's due"
+    }
+
+    /// One tap for the usual bills: fills the name and category.
+    private var presetRow: some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: 8) {
+                ForEach(Self.presets, id: \.name) { preset in
+                    let on = merchant == preset.name
+                    Button {
+                        merchant = preset.name
+                        autoName = preset.name
+                        category = preset.category
+                        pickedCategory = true
+                        picks += 1
+                    } label: {
+                        HStack(spacing: 6) {
+                            Text(preset.emoji)
+                            Text(preset.name).font(.subheadline.weight(.semibold))
+                        }
+                        .padding(.horizontal, 12).frame(height: 36)
+                        .background(on ? Theme.ink : Theme.card, in: Capsule())
+                        .overlay(Capsule().strokeBorder(Theme.line, lineWidth: on ? 0 : 1))
+                        .foregroundStyle(on ? .white : Theme.ink)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(on ? .isSelected : [])
+                }
+            }
+            .padding(.vertical, 1)
+        }
+        .scrollIndicators(.hidden)
+    }
+
+    private var frequencyRow: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("How often").font(.caption.weight(.bold)).foregroundStyle(Theme.secondary).textCase(.uppercase)
+            ScrollView(.horizontal) {
+                HStack(spacing: 8) {
+                    ForEach(RepeatEvery.allCases) { option in
+                        chip(option.short, on: option == every) { every = option }
+                            .accessibilityIdentifier("repeat-\(option.rawValue)")
+                    }
+                }
+            }
+            .scrollIndicators(.hidden)
+        }
+    }
+
+    /// The next few payments as little calendar pages, so you see exactly when money goes out.
+    private var upcoming: some View {
+        let first = bill.map { $0.logged } ?? 0
+        let start = bill?.start ?? date
+        let dates = (first..<first + 4).map { every.date($0, from: start) }
+        return HStack(spacing: 0) {
+            ForEach(Array(dates.enumerated()), id: \.offset) { index, day in
+                if index > 0 {
+                    Line().stroke(Theme.accent.opacity(0.45), style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [3, 5]))
+                        .frame(height: 2).frame(maxWidth: .infinity).padding(.horizontal, 3)
+                }
+                calendarPage(day, done: bill == nil && day <= .now)
+            }
+        }
+        .padding(.vertical, 4)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Next payments: " + dates.map { $0.formatted(.dateTime.month(.wide).day()) }.joined(separator: ", "))
+    }
+
+    private func calendarPage(_ day: Date, done: Bool) -> some View {
+        VStack(spacing: 0) {
+            Text(day.formatted(.dateTime.month(.abbreviated)).uppercased())
+                .font(.system(size: 10, weight: .heavy, design: .rounded)).foregroundStyle(.white)
+                .frame(maxWidth: .infinity).frame(height: 17)
+                .background(done ? Theme.secondary : Color(hex: "#D9734A"))
+            Text(day.formatted(.dateTime.day()))
+                .font(.system(size: 22, weight: .heavy, design: .rounded)).foregroundStyle(Theme.ink)
+                .frame(height: 30)
+            Text(done ? (Calendar.current.isDateInToday(day) ? "Today" : "Added") : "$" + shownAmount)
+                .font(.system(size: 10, weight: .bold, design: .rounded)).monospacedDigit()
+                .foregroundStyle(done ? Theme.accent : Theme.secondary)
+                .lineLimit(1).minimumScaleFactor(0.6)
+                .padding(.bottom, 5)
+        }
+        .frame(width: 58)
+        .background(Theme.card)
+        .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).strokeBorder(Theme.line, lineWidth: 1))
+        .shadow(color: .black.opacity(0.06), radius: 3, y: 2)
+        .overlay(alignment: .topTrailing) {
+            if done {
+                Image(systemName: "checkmark.circle.fill").font(.system(size: 15)).foregroundStyle(.white, Theme.accent)
+                    .offset(x: 5, y: -5)
+            }
+        }
+    }
+
+    private var repeatSummary: String {
+        let cents = Int((amount * 100).rounded())
+        var text = "\(money(cents)) \(every.phrase) · about \(money(Int((Double(cents) * every.perYear).rounded()))) a year."
+        guard bill == nil else { return text }
+        if startsLater {
+            text += " The first one is added on \(date.formatted(.dateTime.month(.wide).day()))."
+        } else {
+            let past = (1..<WalletStore.catchUpLimit).prefix { every.date($0, from: date) <= .now }.count
+            if past > 0 { text += " \(past) more since \(date.formatted(.dateTime.month(.abbreviated).day())) will be added too." }
+        }
+        return text
+    }
+
     // MARK: - Load and save
 
     private func load() {
@@ -422,6 +614,10 @@ struct AddPaymentSheet: View {
         note = tx.note ?? ""
         items = tx.items
         itemPrices = Dictionary(uniqueKeysWithValues: tx.items.map { ($0.id, $0.price.map { String(format: "%.2f", $0) } ?? "") })
+        if let bill = store.recurringBill(tx.recurringID) {
+            repeats = true
+            every = bill.every
+        }
         if tx.cents == 0 { step = .amount }
     }
 
@@ -438,13 +634,60 @@ struct AddPaymentSheet: View {
             tx.date = date
             tx.note = cleanNote.isEmpty ? nil : cleanNote
             tx.items = kept
-            store.update(tx)
+            if var bill {
+                if repeats {
+                    bill.merchant = tx.merchant
+                    bill.amount = amount
+                    bill.category = category
+                    bill.card = card
+                    bill.note = tx.note
+                    bill.every = every
+                    store.update(tx)
+                    store.updateRecurring(bill)
+                } else {
+                    store.stopRecurring(bill.id)
+                    store.update(tx)
+                }
+            } else if repeats {
+                let bill = newBill(note: tx.note)
+                tx.recurringID = bill.id
+                store.update(tx)
+                store.startRecurring(bill, firstIsLogged: true)
+            } else {
+                store.update(tx)
+            }
             dismiss()
             return
         }
-        let saved = store.add(merchant: merchant, amount: amount, date: date, card: card, category: category,
-                              source: .manual, items: kept, note: cleanNote.isEmpty ? nil : cleanNote)
+        let note = cleanNote.isEmpty ? nil : cleanNote
+        if startsLater {
+            store.startRecurring(newBill(note: note))
+            dismiss()
+            return
+        }
+        var saved = store.add(merchant: merchant, amount: amount, date: date, card: card, category: category,
+                              source: .manual, items: kept, note: note)
+        if repeats {
+            let bill = newBill(note: note)
+            saved.recurringID = bill.id
+            store.update(saved)
+            store.startRecurring(bill, firstIsLogged: true)
+        }
         if splitAfter { withAnimation { splitting = saved.id } } else { dismiss() }
+    }
+}
+
+extension AddPaymentSheet {
+    fileprivate func newBill(note: String?) -> Recurring {
+        Recurring(merchant: merchant.trimmingCharacters(in: .whitespaces), amount: amount, category: category,
+                  card: card, note: note, every: every, start: date)
+    }
+}
+
+/// A flat line across its frame, for dotted connectors.
+private struct Line: Shape {
+    func path(in rect: CGRect) -> Path {
+        Path { $0.move(to: CGPoint(x: rect.minX, y: rect.midY)); $0.addLine(to: CGPoint(x: rect.maxX, y: rect.midY)) }
     }
 }
 
